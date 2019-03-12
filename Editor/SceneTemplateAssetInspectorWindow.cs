@@ -84,14 +84,24 @@ namespace UnityEditor.SceneTemplate
             return previewTex;
         }
 
+        public override bool UseDefaultMargins()
+        {
+            return false;
+        }
+
         public override VisualElement CreateInspectorGUI()
         {
             var styleSheetLoader = new StyleSheetLoader();
             styleSheetLoader.LoadStyleSheets();
             var root = Root = new VisualElement();
+            root.AddToClassList("scene-template-asset-inspector");
+            root.AddToClassList(StyleSheetLoader.Styles.unityThemeVariables);
+            root.AddToClassList(StyleSheetLoader.Styles.sceneTemplateThemeVariables);
             root.styleSheets.Add(styleSheetLoader.CommonStyleSheet);
             root.styleSheets.Add(styleSheetLoader.VariableStyleSheet);
             root.style.flexDirection = FlexDirection.Column;
+            
+            var detailElement = new VisualElement();
 
             // Template scene
             var templateSceneProperty = serializedObject.FindProperty(k_TemplateScenePropertyName);
@@ -101,13 +111,13 @@ namespace UnityEditor.SceneTemplate
                 RebuildDependencies(root);
                 TriggerSceneTemplateModified();
             });
-            root.Add(templatePropertyField);
+            detailElement.Add(templatePropertyField);
 
             // Scene title
             var templateTitleProperty = serializedObject.FindProperty(k_TemplateTitlePropertyName);
             var titlePropertyField = new PropertyField(templateTitleProperty, "Title");
             titlePropertyField.RegisterCallback<ChangeEvent<string>>(e => TriggerSceneTemplateModified());
-            root.Add(titlePropertyField);
+            detailElement.Add(titlePropertyField);
 
             // Scene description
             var templateDescriptionProperty = serializedObject.FindProperty(k_TemplateDescriptionPropertyName);
@@ -124,26 +134,39 @@ namespace UnityEditor.SceneTemplate
                 serializedObject.ApplyModifiedProperties();
                 TriggerSceneTemplateModified();
             });
-            root.Add(descriptionTextField);
+            detailElement.Add(descriptionTextField);
 
             var templateAddToDefaultsProperty = serializedObject.FindProperty(k_TemplateAddToDefaultsPropertyName);
-            var addToDefaultsPropertyField = new PropertyField(templateAddToDefaultsProperty, "Add To Defaults");
+            var defaultTemplateField = new VisualElement();
+            defaultTemplateField.style.flexDirection = FlexDirection.Row;
+            var addToDefaultsPropertyField = new PropertyField(templateAddToDefaultsProperty, " ");
             addToDefaultsPropertyField.RegisterCallback<ChangeEvent<bool>>(e => TriggerSceneTemplateModified());
-            root.Add(addToDefaultsPropertyField);
+            addToDefaultsPropertyField.style.flexShrink = 0;
+            defaultTemplateField.Add(addToDefaultsPropertyField);
+            var label = new Label("Pin in New Scene Dialog (replaces basic scene)");
+            label.style.unityTextAlign = TextAnchor.MiddleLeft;
+            label.style.overflow = Overflow.Hidden;
+            label.style.textOverflow = TextOverflow.Ellipsis;
+            label.style.flexShrink = 1;
+            defaultTemplateField.Add(label);
+            detailElement.Add(defaultTemplateField);
+            root.Add(CreateFoldoutInspector(detailElement, "Details", "SceneTemplateDetailsFoldout"));
 
             // Template thumbnail
             var templateThumbnailProperty = serializedObject.FindProperty(k_TemplateThumbnailPropertyName);
-            var thumbnailField = MakeThumbnailField(templateThumbnailProperty, "Thumbnail");
-            root.Add(thumbnailField);
+            var thumbnailField = MakeThumbnailField(templateThumbnailProperty, "Texture");
+            root.Add(CreateFoldoutInspector(thumbnailField, "Thumbnail", "SceneTemplateThumbnailFoldout"));
 
             // SceneTemplatePipeline
-            root.Add(AddHelpBox(
+            var sceneTemplatePipeline = new VisualElement();
+            sceneTemplatePipeline.Add(new HelpBox(
                 "Scene Template Pipeline is a MonoScript whose main class derives from ISceneTemplatePipeline or SceneTemplatePipelineAdapter and has the same name as the script.",
-                MessageType.Info, "scene-template-asset-inspector-help-box-pipeline"));
+                HelpBoxMessageType.Info));
 
             var pipelineProperty = serializedObject.FindProperty(k_TemplatePipelineName);
             var pipelineField = new PropertyField(pipelineProperty, "Scene template pipeline") { name = k_SceneTemplatePipelineName };
-            pipelineField.RegisterCallback<ChangeEvent<Object>>(e => {
+            pipelineField.RegisterCallback<ChangeEvent<Object>>(e =>
+            {
                 if (e.newValue != null && !SceneTemplateAsset.IsValidPipeline(e.newValue as MonoScript))
                 {
                     Debug.LogWarning("Scene Template Pipeline must be a MonoScript whose main class derives from ISceneTemplatePipeline or SceneTemplatePipelineAdapter and has the same name as the script.");
@@ -151,35 +174,41 @@ namespace UnityEditor.SceneTemplate
                     serializedObject.ApplyModifiedProperties();
                 }
             });
-            root.Add(pipelineField);
+            sceneTemplatePipeline.Add(pipelineField);
+            root.Add(CreateFoldoutInspector(sceneTemplatePipeline, "Scene Template Pipeline", "SceneTemplatePipelineFoldout"));
 
             // Dependencies
-            BuildDependencyRows(root);
+            root.Add(CreateFoldoutInspector(BuildDependencyRows(), "Dependencies", "SceneTemplateDependenciesFoldout"));
 
             root.Bind(serializedObject);
             return root;
         }
 
-        private static VisualElement AddHelpBox(string title, MessageType msgType, params string[] classes)
+        private static Foldout CreateFoldoutInspector(VisualElement element, string title, string foldoutEditorPref)
         {
-            IMGUIContainer helpbox = null;
-            helpbox = new IMGUIContainer(() =>
+            var foldout = new Foldout();
+            foldout.value = EditorPrefs.GetBool(foldoutEditorPref);
+            var toggle = foldout.Q<Toggle>();
+            toggle.AddToClassList(StyleSheetLoader.Styles.classInspectorFoldoutHeader);
+            var titleElement = new Label(title);
+            titleElement.AddToClassList(StyleSheetLoader.Styles.classInspectorFoldoutHeaderText);
+            toggle.Children().First().Add(titleElement);
+            foldout.Add(element);
+
+            foldout.RegisterValueChangedCallback(e =>
             {
-                EditorGUI.HelpBox(helpbox.contentRect, title, msgType);
+                EditorPrefs.SetBool(foldoutEditorPref, e.newValue);
             });
-            helpbox.AddToClassList(StyleSheetLoader.Styles.classUnityBaseField);
-            foreach (var c in classes)
-            {
-                helpbox.AddToClassList(c);
-            }
-            return helpbox;
+
+            return foldout;
         }
 
-        private void BuildDependencyRows(VisualElement root)
+        private VisualElement BuildDependencyRows()
         {
+            var dependencies = new VisualElement();
             var dependenciesProperty = serializedObject.FindProperty(k_DependenciesPropertyName);
-            m_DependencyHelpBox = AddHelpBox(k_DependencyInfo, MessageType.Info, "scene-template-asset-inspector-help-box-dependency");
-            root.Add(m_DependencyHelpBox);
+            m_DependencyHelpBox = new HelpBox(k_DependencyInfo, HelpBoxMessageType.Info);// AddHelpBox(k_DependencyInfo, MessageType.Info, "scene-template-asset-inspector-help-box-dependency");
+            dependencies.Add(m_DependencyHelpBox);
 
             m_DependenciesProperty = new List<SerializedProperty>();
             PopulateDependencyProperties(dependenciesProperty, m_DependenciesProperty);
@@ -188,7 +217,7 @@ namespace UnityEditor.SceneTemplate
             {
                 var changeAllRowElement = new VisualElement();
                 changeAllRowElement.style.flexDirection = FlexDirection.Row;
-                root.Add(changeAllRowElement);
+                dependencies.Add(changeAllRowElement);
 
                 var dependenciesLabelField = new Label("Dependencies") { name = k_DependenciesLabelName };
                 dependenciesLabelField.AddToClassList(StyleSheetLoader.Styles.classHeaderLabel);
@@ -220,9 +249,10 @@ namespace UnityEditor.SceneTemplate
             m_ZebraList.listView.selectionType = SelectionType.Multiple;
             m_ZebraList.listView.onItemsChosen += OnDoubleClick;
             m_ZebraList.listView.RegisterCallback<KeyUpEvent>(OnKeyUpEvent);
-            root.Add(m_ZebraList);
+            dependencies.Add(m_ZebraList);
             m_ZebraList.name = k_DependencyListView;
             UpdateDependencyListVisibility();
+            return dependencies;
         }
 
         private bool AreAllDependenciesCloned()
@@ -447,7 +477,6 @@ namespace UnityEditor.SceneTemplate
             // Snapshot button with dropdown
             var cameraNames = Camera.allCameras.Select(c => new SnapshotTargetInfo { Name = c.name, OnSnapshotAction = TakeSnapshotFromCamera }).ToList();
             cameraNames.Add(new SnapshotTargetInfo()); // Separator
-            cameraNames.Add(new SnapshotTargetInfo { Name = "Scene View", OnSnapshotAction = (info, property) => TakeSnapshotFromSceneCamera(property) });
             cameraNames.Add(new SnapshotTargetInfo { Name = "Game View", OnSnapshotAction = (info, property) => TakeSnapshotFromGameView(property) });
             var snapshotTargetPopup = new PopupField<SnapshotTargetInfo>("View", cameraNames, Camera.allCameras.Length == 0 ? 1 : 0);
             snapshotTargetPopup.formatListItemCallback = info => info.Name;
@@ -541,13 +570,13 @@ namespace UnityEditor.SceneTemplate
             else
             {
                 var savedRT = RenderTexture.active;
-                var savedViewport = SnapshotUtils.GetRawViewportRect();
+                var savedViewport = ShaderUtil.rawViewportRect;
 
                 var tmp = RenderTexture.GetTemporary(
                     source.width, source.height,
                     0,
                     SystemInfo.GetGraphicsFormat(DefaultFormat.LDR));
-                var mat = SnapshotUtils.GetMaterialForSpecialTexture(source, null, QualitySettings.activeColorSpace == ColorSpace.Linear);
+                var mat = EditorGUI.GetMaterialForSpecialTexture(source, null, QualitySettings.activeColorSpace == ColorSpace.Linear);
                 if (mat != null)
                     Graphics.Blit(source, tmp, mat);
                 else Graphics.Blit(source, tmp);
@@ -558,8 +587,8 @@ namespace UnityEditor.SceneTemplate
                 uncompressedTexture.Apply();
                 RenderTexture.ReleaseTemporary(tmp);
 
-                SnapshotUtils.SetRenderTextureNoViewport(savedRT);
-                SnapshotUtils.SetRawViewportRect(savedViewport);
+                EditorGUIUtility.SetRenderTextureNoViewport(savedRT);
+                ShaderUtil.rawViewportRect = savedViewport;
             }
 
             return uncompressedTexture;

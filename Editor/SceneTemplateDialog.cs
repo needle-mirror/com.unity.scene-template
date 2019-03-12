@@ -21,6 +21,7 @@ namespace UnityEditor.SceneTemplate
         public Texture2D thumbnail;
         public Func<bool, bool> onCreateCallback;
         public bool isDefault;
+        public SceneTemplateAsset sceneTemplate;
 
         public string ValidPath => string.IsNullOrEmpty(assetPath) ? name : assetPath;
 
@@ -52,39 +53,39 @@ namespace UnityEditor.SceneTemplate
 
     internal class SceneTemplateDialog : EditorWindow
     {
-        public const string emptyTemplateName = "Empty";
-        public const string basicTemplateName = "Basic";
+        public const string emptyTemplateName = "Empty Scene";
+        public const string basicTemplateName = "Default Scene";
 
         private List<SceneTemplateInfo> m_SceneTemplateInfos;
         private static readonly GUIContent k_WindowTitle = new GUIContent("New Scene");
 
-        private const string k_LastSelectedTemplateSessionKey = "SceneTemplateDialogLastSelectedTemplate";
+        private const string k_KeyPrefix = "SceneTemplateDialog";
 
-        private const string k_SceneTemplateDefaultListLabelName = "scene-template-default-label";
-        private const string k_SceneTemplateProjectListLabelName = "scene-template-project-label";
         internal const string k_SceneTemplateTitleLabelName = "scene-template-title-label";
+        internal const string k_SceneTemplatePathSection = "scene-template-path-section";
         internal const string k_SceneTemplatePathName = "scene-template-path-label";
+        internal const string k_SceneTemplateDescriptionSection = "scene-template-description-section";
         internal const string k_SceneTemplateDescriptionName = "scene-template-description-label";
         internal const string k_SceneTemplateThumbnailName = "scene-template-thumbnail-element";
         internal const string k_SceneTemplateListViewThumbnailName = "scene-template-list-view-thumbnail-element";
         private const string k_SceneTemplateEditTemplateButtonName = "scene-template-edit-template-button";
         private const string k_SceneTemplateCreateAdditiveButtonName = "scene-template-create-additive-button";
-
+        
         private const string k_LoadAdditivelyError = "Cannot load an in-memory scene additively while another in-memory scene is loaded. Save the current scene or load a project scene.";
 
-        private const string k_EmptyTemplateDescription = "Empty scene.";
-        private const string k_DefaultTemplateDescription = "Default scene. Contains a camera and a directional light.";
+        private const string k_EmptyTemplateDescription = "Just an empty scene - no Game Objects, uses the built-in renderer.";
+        private const string k_DefaultTemplateDescription = "Contains a camera and directional light, works with built-in renderer. Pin any scene that uses Volume Profiles compatible with URP or HDRP in order to hide this default scene.";
 
-        private static readonly string k_EmptyTemplateThumbnailPath = $"{SceneTemplate.packageFolderName}/Editor/Resources/scene-template-empty-scene.png";
-        private static readonly string k_DefaultTemplateThumbnailPath = $"{SceneTemplate.packageFolderName}/Editor/Resources/scene-template-default-scene.png";
+        private static readonly string k_EmptyTemplateThumbnailPath = $"{SceneTemplate.resourcesFolder}/scene-template-empty-scene.png";
+        private static readonly string k_DefaultTemplateThumbnailPath = $"{SceneTemplate.resourcesFolder}/scene-template-default-scene.png";
 
         private static SceneTemplateInfo s_EmptySceneTemplateInfo = new SceneTemplateInfo { name = emptyTemplateName, isDefault = true, description = k_EmptyTemplateDescription, onCreateCallback = CreateEmptyScene };
         private static SceneTemplateInfo s_BasicSceneTemplateInfo = new SceneTemplateInfo { name = basicTemplateName, isDefault = true, description = k_DefaultTemplateDescription, onCreateCallback = CreateDefaultScene };
         private SceneTemplateInfo m_LastSelectedTemplate;
 
         private SceneTemplatePreviewArea m_PreviewArea;
-        private ZebraList m_DefaultList;
-        private ZebraList m_ProjectList;
+        private GridView m_GridView;
+        private HelpBox m_NoUserTemplateHelpBox;
 
         private const int k_ListViewRowHeight = 32;
         internal Texture2D m_DefaultListViewThumbnail;
@@ -123,6 +124,7 @@ namespace UnityEditor.SceneTemplate
         [UsedImplicitly]
         private void OnEnable()
         {
+
             SceneTemplateAssetInspectorWindow.sceneTemplateAssetModified += OnSceneTemplateAssetModified;
             ValidatePosition();
             SetupData();
@@ -135,16 +137,14 @@ namespace UnityEditor.SceneTemplate
                     case KeyCode.Escape when !docked:
                         Close();
                         break;
-                    case KeyCode.Tab:
-                        SelectNextEnabledButton();
-                        UpdateSelectedButton();
-                        break;
                 }
             });
 
             // Load stylesheets
             var styleSheetLoader = new StyleSheetLoader();
             styleSheetLoader.LoadStyleSheets();
+            rootVisualElement.AddToClassList(StyleSheetLoader.Styles.unityThemeVariables);
+            rootVisualElement.AddToClassList(StyleSheetLoader.Styles.sceneTemplateThemeVariables);
             rootVisualElement.styleSheets.Add(styleSheetLoader.CommonStyleSheet);
             rootVisualElement.styleSheets.Add(styleSheetLoader.VariableStyleSheet);
 
@@ -162,6 +162,7 @@ namespace UnityEditor.SceneTemplate
             // Create a container for the scene templates lists(left side)
             var sceneTemplatesContainer = new VisualElement();
             sceneTemplatesContainer.AddToClassList(StyleSheetLoader.Styles.classTemplatesContainer);
+            sceneTemplatesContainer.AddToClassList(StyleSheetLoader.Styles.sceneTemplateDialogBorder);
             mainContainer.Add(sceneTemplatesContainer);
             CreateAllSceneTemplateListsUI(sceneTemplatesContainer);
 
@@ -174,15 +175,12 @@ namespace UnityEditor.SceneTemplate
 
             // Create the button row
             var buttonRow = new VisualElement();
+            buttonRow.AddToClassList(StyleSheetLoader.Styles.sceneTemplateDialogFooter);
             offsetContainer.Add(buttonRow);
             buttonRow.style.flexDirection = FlexDirection.Row;
 
-            var editTemplateButton = new Button(() =>
-            {
-                OnEditTemplate(m_LastSelectedTemplate);
-            }) { name = k_SceneTemplateEditTemplateButtonName, text = "Edit Template" };
-            editTemplateButton.SetEnabled(!m_LastSelectedTemplate.IsInMemoryScene);
-            buttonRow.Add(editTemplateButton);
+            var loadAdditiveButton = new Toggle() { name = k_SceneTemplateCreateAdditiveButtonName, text = "Load additively" };
+            buttonRow.Add(loadAdditiveButton);
 
             // The buttons need to be right-aligned
             var buttonSection = new VisualElement();
@@ -195,30 +193,21 @@ namespace UnityEditor.SceneTemplate
                     return;
                 OnCreateNewScene(m_LastSelectedTemplate);
             }) { text = "Create" };
-            var createAdditivelyButton = new Button(() =>
-            {
-                if (m_LastSelectedTemplate == null)
-                    return;
-                OnCreateNewSceneAdditive(m_LastSelectedTemplate);
-            }) { name = k_SceneTemplateCreateAdditiveButtonName, text = "Create Additive"};
-            createAdditivelyButton.SetEnabled(m_LastSelectedTemplate.CanOpenAdditively());
+            createSceneButton.AddToClassList(StyleSheetLoader.Styles.classButton);
             var cancelButton = new Button(Close) { text = "Cancel" };
+            cancelButton.AddToClassList(StyleSheetLoader.Styles.classButton);
             buttonSection.Add(cancelButton);
-            buttonSection.Add(createAdditivelyButton);
             buttonSection.Add(createSceneButton);
 
             m_Buttons = new List<ButtonInfo>
             {
-                new ButtonInfo {button = editTemplateButton, callback = OnEditTemplate},
                 new ButtonInfo {button = createSceneButton, callback = OnCreateNewScene},
-                new ButtonInfo {button = createAdditivelyButton, callback = OnCreateNewSceneAdditive},
                 new ButtonInfo {button = cancelButton, callback = info => Close()}
             };
             m_SelectedButtonIndex = m_Buttons.FindIndex(bi => bi.button == createSceneButton);
             UpdateSelectedButton();
 
             SetAllElementSequentiallyFocusable(rootVisualElement, false);
-            UpdateAllListsSelection(m_LastSelectedTemplate.isDefault ? 0 : 1);
         }
 
         internal void OnEditTemplate(SceneTemplateInfo sceneTemplateInfo)
@@ -239,6 +228,7 @@ namespace UnityEditor.SceneTemplate
         [UsedImplicitly]
         private void OnDisable()
         {
+            EditorPrefs.SetFloat(GetKeyName(nameof(m_GridView.sizeLevel)), m_GridView.sizeLevel);
             SceneTemplateAssetInspectorWindow.sceneTemplateAssetModified -= OnSceneTemplateAssetModified;
         }
 
@@ -250,8 +240,29 @@ namespace UnityEditor.SceneTemplate
             {
                 SetLastSelectedTemplate(GetDefaultSceneTemplateInfo());
             }
-            RebuildLists();
+            else
+            {
+                SetLastSelectedTemplate(m_SceneTemplateInfos[lastSelectedTemplateIndex]);
+            }
+
+            RefreshTemplateGridView();
+
             UpdateTemplateDescriptionUI(m_LastSelectedTemplate);
+        }
+
+        private void RefreshTemplateGridView()
+        {
+            m_GridView.onPinnedChanged -= OnPinnedChanged;
+            m_GridView.onSelectionChanged -= OnTemplateListViewSelectionChanged;
+
+            var items = CreateGridViewItems();
+            m_GridView.SetItems(items);
+            m_GridView.SetPinned(m_SceneTemplateInfos.Where(template => template.isDefault).Select(template => template.GetHashCode()));
+            m_GridView.SetSelection(m_LastSelectedTemplate.GetHashCode());
+
+
+            m_GridView.onPinnedChanged += OnPinnedChanged;
+            m_GridView.onSelectionChanged += OnTemplateListViewSelectionChanged;
         }
 
         private void CreateAllSceneTemplateListsUI(VisualElement rootContainer)
@@ -259,164 +270,166 @@ namespace UnityEditor.SceneTemplate
             if (m_SceneTemplateInfos == null)
                 return;
 
-            // Default templates
-            var defaultSceneTemplateInfos = m_SceneTemplateInfos.Where(info => info.isDefault).ToList();
-            m_DefaultList = CreateSceneTemplateListUI(rootContainer, defaultSceneTemplateInfos, "Defaults", true, k_SceneTemplateDefaultListLabelName, new []{StyleSheetLoader.Styles.classDefaultListView});
-            m_DefaultList.style.height = Math.Min(6, defaultSceneTemplateInfos.Count + 1) * k_ListViewRowHeight + 2;
+            var templateItems = CreateGridViewItems();
+            m_GridView = new GridView(templateItems, "Scene Templates in Project", k_ListViewRowHeight, 64, 256, 4/3);
+            m_GridView.wrapAroundKeyboardNavigation = true;
+            m_GridView.sizeLevel = EditorPrefs.GetFloat(GetKeyName(nameof(m_GridView.sizeLevel)), 128);
+            rootContainer.Add(m_GridView);
 
-            // Project templates
-            var projectSceneTemplateInfos = m_SceneTemplateInfos.Where(info => !info.isDefault).ToList();
-            m_ProjectList = CreateSceneTemplateListUI(rootContainer, projectSceneTemplateInfos, "Template Scene(s) in Project", false, k_SceneTemplateProjectListLabelName, new[] { StyleSheetLoader.Styles.classTemplateListView } );
-        }
+            m_GridView.SetPinned(m_SceneTemplateInfos.Where(template => template.isDefault).Select(template => template.GetHashCode()));
 
-        private ZebraList CreateSceneTemplateListUI(VisualElement rootContainer, List<SceneTemplateInfo> infos, string listName, bool isDefault, string labelElementName, string[] ussClasses = null)
-        {
-            var allListViews = rootContainer.Query<ListView>().ToList();
-            var currentIndex = allListViews.Count;
-
-            // Listview
-            var templateSceneZebra = new ZebraList(infos, k_ListViewRowHeight, () =>
+            m_GridView.onSelectionChanged += OnTemplateListViewSelectionChanged;
+            m_GridView.onPinnedChanged += OnPinnedChanged;
+            m_GridView.onItemsActivated += objects =>
             {
-                var header = new Label(listName);
-                header.AddToClassList(StyleSheetLoader.Styles.classHeaderLabel);
-                header.AddToClassList(StyleSheetLoader.Styles.classDialogListViewHeader);
-                header.name = labelElementName;
-                return header;
-            }, MakeListViewItem, (e, i) => BindListViewItem(e, i, infos));
-            templateSceneZebra.AddToClassList(StyleSheetLoader.Styles.classListView);
-
-            templateSceneZebra.listView.selectionType = SelectionType.Single;
-            templateSceneZebra.listView.onItemsChosen += objects =>
-            {
-                var obj = objects.FirstOrDefault();
-                if (!(obj is SceneTemplateInfo sceneTemplateInfo))
+                var sceneTemplateInfo = objects.First().userData as SceneTemplateInfo;
+                if (sceneTemplateInfo == null)
                     return;
                 if (m_SelectedButtonIndex != -1)
                     m_Buttons[m_SelectedButtonIndex].callback(sceneTemplateInfo);
             };
-            templateSceneZebra.listView.onSelectionChange += objects => OnTemplateListViewSelectionChanged(objects, rootContainer, currentIndex);
-            if (ussClasses != null)
-            {
-                foreach (var ussClass in ussClasses)
-                {
-                    templateSceneZebra.AddToClassList(ussClass);
-                }
-            }
-            rootContainer.Add(templateSceneZebra);
 
-            // Select the last selected template in the listview and focus.
-            if (m_LastSelectedTemplate != null && m_LastSelectedTemplate.isDefault == isDefault)
+            var toSelect = templateItems.FirstOrDefault(item => item.userData.Equals(m_LastSelectedTemplate));
+            if (toSelect != null)
             {
-                // Tests don't like setting the initial selection in the delay call, so do it here
-                templateSceneZebra.listView.selectedIndex = infos.FindIndex(info => info.Equals(m_LastSelectedTemplate));
-                EditorApplication.delayCall += () =>
-                {
-                    templateSceneZebra.listView.Focus();
-                };
+                m_GridView.SetSelection(toSelect);
+            }
+            else
+            {
+                m_GridView.SetSelection(templateItems.First());
             }
 
-            var scrollView = templateSceneZebra.listView.Q<ScrollView>();
-            scrollView?.RegisterCallback<KeyDownEvent>(e =>
+            m_NoUserTemplateHelpBox = new HelpBox("To begin using a template, create a template from an existing scene in your project. Click to see Scene template documentation.", HelpBoxMessageType.Info);
+            m_NoUserTemplateHelpBox.AddToClassList(StyleSheetLoader.Styles.sceneTemplateNoTemplateHelpBox);
+            m_NoUserTemplateHelpBox.style.display = m_SceneTemplateInfos.All(t => t.IsInMemoryScene) ? DisplayStyle.Flex : DisplayStyle.None;
+            m_GridView.Insert(2, m_NoUserTemplateHelpBox);
+
+            EditorApplication.delayCall += () =>
             {
-                var listViews = rootContainer.Query<ListView>().ToList();
-                var clearCurrentSelection = false;
-
-                switch (e.keyCode) {
-                    case KeyCode.UpArrow:
-                        if (templateSceneZebra.listView.selectedIndex == 0)
-                        {
-                            var previousIndex = FindPreviousListIndex(currentIndex, listViews);
-                            var previousList = listViews[previousIndex];
-                            SelectListViewItem(previousList, previousList.itemsSource.Count - 1);
-                            clearCurrentSelection = previousIndex != currentIndex;
-                            e.StopPropagation();
-                        }
-
-                        break;
-                    case KeyCode.DownArrow:
-                        if (templateSceneZebra.listView.selectedIndex == templateSceneZebra.listView.itemsSource.Count - 1)
-                        {
-                            var nextIndex = FindNextListIndex(currentIndex, listViews);
-                            var nextList = listViews[nextIndex];
-                            SelectListViewItem(nextList, 0);
-                            clearCurrentSelection = nextIndex != currentIndex;
-                            e.StopPropagation();
-                        }
-                        break;
-                }
-                if (clearCurrentSelection)
-                    ClearListSelection(templateSceneZebra.listView);
-            }, TrickleDown.TrickleDown);
-
-            return templateSceneZebra;
+                m_GridView.SetFocus();
+            };
         }
 
-        private static int FindPreviousListIndex(int currentIndex, IReadOnlyList<ListView> listViews)
+        private static string GetKeyName(string name)
         {
-            while (true)
-            {
-                var previousIndex = currentIndex == 0 ? listViews.Count - 1 : currentIndex - 1;
-                if (listViews[previousIndex].itemsSource.Count > 0) return previousIndex;
-                currentIndex = previousIndex;
-            }
+            return $"{k_KeyPrefix}.{name}";
         }
 
-        private static int FindNextListIndex(int currentIndex, IReadOnlyList<ListView> listViews)
+        private IEnumerable<GridView.Item> CreateGridViewItems()
         {
-            while (true)
+            // What to do with defaults item? auto pin them?
+            var defaultThumbnail = EditorGUIUtility.IconContent("d_SceneAsset Icon").image as Texture2D;
+            var defaultSceneTemplateInfos = m_SceneTemplateInfos.Where(info => info.isDefault).ToList();
+            var projectSceneTemplateInfos = m_SceneTemplateInfos.Where(info => !info.isDefault).ToList();
+            var templateItems = defaultSceneTemplateInfos.Concat(projectSceneTemplateInfos).Select(info =>
             {
-                var nextIndex = (currentIndex + 1) % listViews.Count;
-                if (listViews[nextIndex].itemsSource.Count > 0) return nextIndex;
-                currentIndex = nextIndex;
-            }
+                var item = new GridView.Item(info.GetHashCode(), info.name, info.thumbnail ? info.thumbnail : defaultThumbnail, info);
+                return item;
+            });
+            return templateItems;
         }
 
         private void CreateTemplateDescriptionUI(VisualElement rootContainer)
         {
-            rootContainer.style.flexDirection = FlexDirection.Row;
-
-            // Text container
-            var textContainer = new VisualElement();
-            textContainer.AddToClassList(StyleSheetLoader.Styles.classDescriptionTextContainer);
-            rootContainer.Add(textContainer);
-
-            var sceneTitleLabel = new Label();
-            sceneTitleLabel.name = k_SceneTemplateTitleLabelName;
-            sceneTitleLabel.AddToClassList(StyleSheetLoader.Styles.classHeaderLabel);
-            sceneTitleLabel.AddToClassList(StyleSheetLoader.Styles.classWrappingText);
-            textContainer.Add(sceneTitleLabel);
-
-            var scenePathLabel = new Label();
-            scenePathLabel.name = k_SceneTemplatePathName;
-            scenePathLabel.AddToClassList(StyleSheetLoader.Styles.classWrappingText);
-            scenePathLabel.AddToClassList(StyleSheetLoader.Styles.classTextLink);
-            scenePathLabel.RegisterCallback<MouseDownEvent>(e =>
-            {
-                if (string.IsNullOrEmpty(scenePathLabel.text))
-                    return;
-
-                var asset = AssetDatabase.LoadAssetAtPath<SceneTemplateAsset>(scenePathLabel.text);
-                if (!asset)
-                    return;
-                EditorGUIUtility.PingObject(asset.GetInstanceID());
-            });
-            textContainer.Add(scenePathLabel);
-
-            var sceneDescriptionLabel = new Label();
-            sceneDescriptionLabel.name = k_SceneTemplateDescriptionName;
-            sceneDescriptionLabel.AddToClassList(StyleSheetLoader.Styles.classWrappingText);
-            textContainer.Add(sceneDescriptionLabel);
+            rootContainer.style.flexDirection = FlexDirection.Column;
 
             // Thumbnail container
-            var thumbnailContainer = new VisualElement();
-            thumbnailContainer.AddToClassList(StyleSheetLoader.Styles.classDescriptionThumbnailContainer);
-            rootContainer.Add(thumbnailContainer);
-
-            m_PreviewArea = new SceneTemplatePreviewArea(k_SceneTemplateThumbnailName, m_LastSelectedTemplate?.thumbnail, "No preview thumbnail added");
+            m_PreviewArea = new SceneTemplatePreviewArea(k_SceneTemplateThumbnailName, m_LastSelectedTemplate?.thumbnail, "No preview thumbnail available");
             var thumbnailElement = m_PreviewArea.Element;
-            thumbnailContainer.Add(thumbnailElement);
+            rootContainer.Add(thumbnailElement);
 
+            rootContainer.RegisterCallback<GeometryChangedEvent>(evt => UpdatePreviewAreaSize());
+
+            // Text container
+            var sceneTitleLabel = new Label();
+            sceneTitleLabel.name = k_SceneTemplateTitleLabelName;
+            sceneTitleLabel.AddToClassList(StyleSheetLoader.Styles.classWrappingText);
+            rootContainer.Add(sceneTitleLabel);
+
+            var assetPathSection = new VisualElement();
+            assetPathSection.name = k_SceneTemplatePathSection;
+            {
+
+                var scenePathLabel = new Label();
+                scenePathLabel.name = k_SceneTemplatePathName;
+                scenePathLabel.AddToClassList(StyleSheetLoader.Styles.classWrappingText);
+                assetPathSection.Add(scenePathLabel);
+
+                var editLocateRow = new VisualElement();
+                editLocateRow.style.flexDirection = FlexDirection.Row;
+                {
+                    var scenePathLocate = new Label();
+                    scenePathLocate.text = "Locate";
+                    scenePathLocate.AddToClassList(StyleSheetLoader.Styles.classTextLink);
+                    scenePathLocate.RegisterCallback<MouseDownEvent>(e =>
+                    {
+                        if (string.IsNullOrEmpty(scenePathLabel.text))
+                            return;
+
+                        var asset = AssetDatabase.LoadAssetAtPath<SceneTemplateAsset>(scenePathLabel.text);
+                        if (!asset)
+                            return;
+
+                        EditorApplication.delayCall += () =>
+                        {
+                            EditorWindow.FocusWindowIfItsOpen(SceneTemplateUtils.GetProjectBrowserWindowType());
+                            EditorApplication.delayCall += () => EditorGUIUtility.PingObject(asset);
+                        };
+                    });
+                    editLocateRow.Add(scenePathLocate);
+
+                    editLocateRow.Add(new Label() { text = " | " });
+
+                    var scenePathEdit = new Label();
+                    scenePathEdit.name = k_SceneTemplateEditTemplateButtonName;
+                    scenePathEdit.text = "Edit";
+                    scenePathEdit.AddToClassList(StyleSheetLoader.Styles.classTextLink);
+                    scenePathEdit.RegisterCallback<MouseDownEvent>(e =>
+                    {
+                        OnEditTemplate(m_LastSelectedTemplate);
+                    });
+                    editLocateRow.Add(scenePathEdit);
+                }
+                assetPathSection.Add(editLocateRow);
+            }            
+            rootContainer.Add(assetPathSection);
+
+            var descriptionSection = new VisualElement();
+            descriptionSection.name = k_SceneTemplateDescriptionSection;
+            {
+                var descriptionLabel = new Label();
+                descriptionLabel.AddToClassList(StyleSheetLoader.Styles.classHeaderLabel);
+                descriptionLabel.text = "Description";
+                descriptionSection.Add(descriptionLabel);
+
+                var sceneDescriptionLabel = new Label();
+                sceneDescriptionLabel.AddToClassList(StyleSheetLoader.Styles.classWrappingText);
+                sceneDescriptionLabel.name = k_SceneTemplateDescriptionName;
+                descriptionSection.Add(sceneDescriptionLabel);
+            }
+            rootContainer.Add(descriptionSection);
+            
             UpdateTemplateDescriptionUI(m_LastSelectedTemplate);
+        }
+
+        private void UpdatePreviewAreaSize(SceneTemplateInfo info = null)
+        {
+            info = info ?? m_LastSelectedTemplate;
+            if (m_PreviewArea == null)
+                return;
+
+            if (info == null || info.thumbnail == null || info.thumbnail.height > info.thumbnail.width)
+            {
+                m_PreviewArea.Element.style.height = Length.Percent(50);
+                return;
+            }
+
+            var thumbnail = info.thumbnail;
+            var aspectRatio = (float)thumbnail.height / (float)thumbnail.width;
+            var width = m_PreviewArea.Element.worldBound.width;
+            var newHeight = m_PreviewArea.Element.worldBound.width * aspectRatio;
+            // Debug.Log($"Preview size: {info.name} width: {info.thumbnail.width} height:{info.thumbnail.height} ratio: {aspectRatio} AreaW: {width} NewHeigth: {newHeight}");
+            m_PreviewArea.Element.style.height = newHeight;
         }
 
         private void UpdateTemplateDescriptionUI(SceneTemplateInfo newSceneTemplateInfo)
@@ -429,68 +442,24 @@ namespace UnityEditor.SceneTemplate
             }
 
             var sceneTemplatePathLabel = rootVisualElement.Q<Label>(k_SceneTemplatePathName);
-            if (sceneTemplatePathLabel != null && newSceneTemplateInfo != null)
+            var sceneTemplatePathSection = rootVisualElement.Q(k_SceneTemplatePathSection);
+            if (sceneTemplatePathLabel != null && newSceneTemplateInfo != null && sceneTemplatePathSection != null)
             {
                 sceneTemplatePathLabel.text = newSceneTemplateInfo.assetPath;
+                sceneTemplatePathSection.visible = !string.IsNullOrEmpty(newSceneTemplateInfo.assetPath);
             }
 
             var sceneTemplateDescriptionLabel = rootVisualElement.Q<Label>(k_SceneTemplateDescriptionName);
-            if (sceneTemplateDescriptionLabel != null && newSceneTemplateInfo != null)
+            var sceneTemplateDescriptionSection = rootVisualElement.Q(k_SceneTemplateDescriptionSection);
+            if (sceneTemplateDescriptionLabel != null && newSceneTemplateInfo != null && sceneTemplateDescriptionSection != null)
             {
                 sceneTemplateDescriptionLabel.text = newSceneTemplateInfo.description;
+                sceneTemplateDescriptionSection.visible = !string.IsNullOrEmpty(newSceneTemplateInfo.description);
             }
 
             // Thumbnail
             m_PreviewArea?.UpdatePreview(newSceneTemplateInfo?.thumbnail);
-        }
-
-        private VisualElement MakeListViewItem()
-        {
-            var rowElement = new VisualElement();
-            rowElement.AddToClassList(StyleSheetLoader.Styles.classListViewItem);
-
-            // Template thumbnail
-            var thumbnail = new VisualElement() { name = k_SceneTemplateListViewThumbnailName };
-            thumbnail.style.height = k_ListViewRowHeight;
-            thumbnail.style.width = k_ListViewRowHeight;
-            thumbnail.style.backgroundImage = new StyleBackground(m_DefaultListViewThumbnail);
-            rowElement.Add(thumbnail);
-
-            // Template title
-            var label = new Label();
-            rowElement.Add(label);
-
-            return rowElement;
-        }
-
-        private static void BindListViewItem(VisualElement element, int index, List<SceneTemplateInfo> infoList)
-        {
-            if (infoList == null || index >= infoList.Count)
-                return;
-
-            var sceneTemplateInfo = infoList[index];
-
-            // Bind thumbnail
-            if (sceneTemplateInfo.thumbnail != null)
-            {
-                var thumbnail = element.Q(k_SceneTemplateListViewThumbnailName);
-                thumbnail.style.backgroundImage = new StyleBackground(sceneTemplateInfo.thumbnail);
-            }
-
-            // Bind title
-            var label = element.Q<Label>();
-            label.text = sceneTemplateInfo.name;
-        }
-
-        private static void SelectListViewItem(ListView listView, int selectedIndex)
-        {
-            listView.selectedIndex = selectedIndex;
-            listView.Focus();
-        }
-
-        private static void ClearListSelection(ListView listView)
-        {
-            listView.selectedIndex = -1;
+            UpdatePreviewAreaSize(newSceneTemplateInfo);
         }
 
         private void SetupData()
@@ -507,7 +476,7 @@ namespace UnityEditor.SceneTemplate
 
         private void LoadSessionPreferences()
         {
-            var lastTemplateAssetPath = EditorPrefs.GetString(k_LastSelectedTemplateSessionKey, null);
+            var lastTemplateAssetPath = EditorPrefs.GetString(GetKeyName(nameof(m_LastSelectedTemplate)), null);
             if (!string.IsNullOrEmpty(lastTemplateAssetPath) && m_SceneTemplateInfos != null)
             {
                 m_LastSelectedTemplate = m_SceneTemplateInfos.Find(info => info.Equals(lastTemplateAssetPath));
@@ -519,25 +488,32 @@ namespace UnityEditor.SceneTemplate
             }
         }
 
-        private void OnTemplateListViewSelectionChanged(IEnumerable<object> objects, VisualElement root, int currentListIndex)
+        private void OnPinnedChanged(GridView.Item item, bool isPinned)
         {
-            var objList = objects.ToList();
+            var info = item.userData as SceneTemplateInfo;
+            if (info.sceneTemplate != null)
+            {
+                var infoObj = new SerializedObject(info.sceneTemplate);
+                var prop = infoObj.FindProperty("addToDefaults");
+                prop.boolValue = isPinned;
+                infoObj.ApplyModifiedProperties();
+                OnSceneTemplateAssetModified(info.sceneTemplate);
+            }
+        }
+
+        private void OnTemplateListViewSelectionChanged(IEnumerable<GridView.Item> oldSelection, IEnumerable<GridView.Item> newSelection)
+        {
+            var objList = newSelection.ToList();
             if (objList.Count == 0)
                 return;
 
-            var info = objList[0] as SceneTemplateInfo;
+            var info = objList[0].userData as SceneTemplateInfo;
             if (info == null)
                 return;
-
-            UpdateAllListsSelection(currentListIndex);
 
             UpdateTemplateDescriptionUI(info);
 
             SetLastSelectedTemplate(info);
-
-            // Enable/Disable Edit Template button
-            var editTemplateButton = rootVisualElement.Q<Button>(k_SceneTemplateEditTemplateButtonName);
-            editTemplateButton?.SetEnabled(!info.IsInMemoryScene);
 
             // Enable/Disable Create Additive button
             var createAdditiveButton = rootVisualElement.Q<Button>(k_SceneTemplateCreateAdditiveButtonName);
@@ -554,16 +530,9 @@ namespace UnityEditor.SceneTemplate
         {
             if (sceneTemplateInfo == null)
                 return;
-            var success = sceneTemplateInfo.onCreateCallback(false);
-            if (success)
-                Close();
-        }
 
-        private void OnCreateNewSceneAdditive(SceneTemplateInfo sceneTemplateInfo)
-        {
-            if (sceneTemplateInfo == null)
-                return;
-            var success = sceneTemplateInfo.onCreateCallback(true);
+            var loadAdditive = rootVisualElement.Q(k_SceneTemplateCreateAdditiveButtonName) as Toggle;
+            var success = sceneTemplateInfo.onCreateCallback(sceneTemplateInfo.CanOpenAdditively() && loadAdditive.value);
             if (success)
                 Close();
         }
@@ -602,6 +571,7 @@ namespace UnityEditor.SceneTemplate
                     assetPath = templateData.Item1,
                     description = templateData.Item2.description,
                     thumbnail = templateData.Item2.preview,
+                    sceneTemplate = templateData.Item2,
                     onCreateCallback = loadAdditively => CreateSceneFromTemplate(templateData.Item1, loadAdditively)
                 };
             }).ToList();
@@ -675,7 +645,7 @@ namespace UnityEditor.SceneTemplate
         private void SetLastSelectedTemplate(SceneTemplateInfo info)
         {
             m_LastSelectedTemplate = info;
-            EditorPrefs.SetString(k_LastSelectedTemplateSessionKey, info.ValidPath);
+            EditorPrefs.SetString(GetKeyName(nameof(m_LastSelectedTemplate)), info.ValidPath);
         }
 
         private SceneTemplateInfo GetDefaultSceneTemplateInfo()
@@ -691,59 +661,12 @@ namespace UnityEditor.SceneTemplate
             });
         }
 
-        private void UpdateListView(ZebraList list, List<SceneTemplateInfo> infos)
-        {
-            // Update item source
-            list.listView.itemsSource = infos;
-            list.listView.bindItem = (element, i) => BindListViewItem(element, i, infos);
-
-            // Select the last selected template in the listview
-            if (m_LastSelectedTemplate != null)
-            {
-                list.listView.selectedIndex = infos.FindIndex(info => info.Equals(m_LastSelectedTemplate));
-            }
-            list.listView.Refresh();
-        }
-
-        private void RebuildLists()
-        {
-            if (m_DefaultList != null)
-            {
-                var defaultSceneTemplateInfos = m_SceneTemplateInfos.Where(info => info.isDefault).ToList();
-                UpdateListView(m_DefaultList, defaultSceneTemplateInfos);
-            }
-
-            if (m_ProjectList != null)
-            {
-                var projectSceneTemplateInfos = m_SceneTemplateInfos.Where(info => !info.isDefault).ToList();
-                UpdateListView(m_ProjectList, projectSceneTemplateInfos);
-            }
-        }
-
         private static void SetAllElementSequentiallyFocusable(VisualElement parent, bool focusable)
         {
             parent.tabIndex = focusable ? 0 : -1;
             foreach (var child in parent.Children())
             {
                 SetAllElementSequentiallyFocusable(child, focusable);
-            }
-        }
-
-        private void UpdateAllListsSelection(int selectedListIndex)
-        {
-            // Clear selection of every other lists, and set their tab index to enable/prevent focusing
-            var allListViews = rootVisualElement.Query<ListView>().ToList();
-            for (var i = 0; i < allListViews.Count; ++i)
-            {
-                if (i != selectedListIndex)
-                {
-                    ClearListSelection(allListViews[i]);
-                    allListViews[i].tabIndex = -1;
-                }
-                else
-                {
-                    allListViews[i].tabIndex = 0;
-                }
             }
         }
 

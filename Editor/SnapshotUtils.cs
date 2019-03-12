@@ -48,7 +48,7 @@ namespace UnityEditor.SceneTemplate
 
                 // Prepare the sceneView region the
                 const int tabHeight = 19; // Taken from DockArea, which is internal, and the value is also internal.
-                var cameraRect = GetSceneViewCameraRect(sceneView);
+                var cameraRect = sceneView.cameraRect;
                 var offsetPosition = sceneView.position.position + cameraRect.position + new Vector2(0, tabHeight);
                 var region = new Rect(offsetPosition, cameraRect.size);
 
@@ -125,65 +125,6 @@ namespace UnityEditor.SceneTemplate
             }
 
             EditorApplication.delayCall += WaitForSnapshotReady;
-        }
-
-        private static PropertyInfo s_CameraRect;
-        internal static Rect GetSceneViewCameraRect([NotNull] SceneView sceneView)
-        {
-            if (s_CameraRect == null)
-            {
-                var t = typeof(SceneView);
-                s_CameraRect = t.GetProperty("cameraRect", BindingFlags.NonPublic | BindingFlags.Instance);
-            }
-
-            return (Rect)s_CameraRect.GetValue(sceneView);
-        }
-
-        private static PropertyInfo s_RawViewportRect;
-        internal static Rect GetRawViewportRect()
-        {
-            if (s_RawViewportRect == null)
-            {
-                var t = typeof(ShaderUtil);
-                s_RawViewportRect = t.GetProperty("rawViewportRect", BindingFlags.NonPublic | BindingFlags.Static);
-            }
-
-            return (Rect)s_RawViewportRect.GetValue(null);
-        }
-
-        internal static void SetRawViewportRect(Rect rect)
-        {
-            if (s_RawViewportRect == null)
-            {
-                var t = typeof(ShaderUtil);
-                s_RawViewportRect = t.GetProperty("rawViewportRect", BindingFlags.NonPublic | BindingFlags.Static);
-            }
-
-            s_RawViewportRect.SetValue(null, rect);
-        }
-
-        private static MethodInfo s_SetRenderTextureNoViewport;
-        internal static void SetRenderTextureNoViewport(RenderTexture rt)
-        {
-            if (s_SetRenderTextureNoViewport == null)
-            {
-                var t = typeof(EditorGUIUtility);
-                s_SetRenderTextureNoViewport = t.GetMethod("SetRenderTextureNoViewport", BindingFlags.NonPublic | BindingFlags.Static);
-            }
-
-            s_SetRenderTextureNoViewport.Invoke(null, new[] { rt });
-        }
-
-        private static MethodInfo s_GetMaterialForSpecialTexture;
-        internal static Material GetMaterialForSpecialTexture(Texture2D source, Material defaultMaterial, bool normals2Linear)
-        {
-            if (s_GetMaterialForSpecialTexture == null)
-            {
-                var t = typeof(EditorGUI);
-                s_GetMaterialForSpecialTexture = t.GetMethod("GetMaterialForSpecialTexture", BindingFlags.NonPublic | BindingFlags.Static);
-            }
-
-            return (Material)s_GetMaterialForSpecialTexture.Invoke(null, new object[] { source, defaultMaterial, normals2Linear });
         }
     }
 }

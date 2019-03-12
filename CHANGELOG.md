@@ -1,3 +1,11 @@
+## [1.0.0-preview.8] - 2019-3-13
+- [UX] New Grid view widget
+- [UX] New Grid view design for new scene dialog
+- [UX] New Pin workflow + replace basic scene workflow
+- [UX] New Layout and design for the Scene Dialog
+- [UX] Meaningful description for both default builtin new scene workflow (emtpy + basic).
+- [UX] Inspector uses a "Component with header" way of displaying its multiple sections.
+
 ## [1.0.0-preview.7] - 2019-11-28
 - [UX-API] Allow SceneTemplatePipeline to filter out its bound template according to a set of condition.
 - [UX] Add a toggle in dependency header to batch clone/reference all dependencies.

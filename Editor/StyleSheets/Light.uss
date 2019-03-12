@@ -1,4 +1,30 @@
-﻿/* ///////////////////////////////////////////////////// */
+﻿.scene-template-variables {
+    --unity-font-size-big: 14px;
+    --theme-footer-bar-background-color: #CFCFCF;
+    --theme-preview-area-background-color: rgb(138,138,138);
+    --theme-text-color-no-preview: rgb(255, 255, 255);
+    --theme-url-text-color: #3A72B0;
+    --theme-input-border-focus-color: #1D5087;
+    --theme-title-background-color: #CBCBCB;
+    --theme-title-background-color-hover: #D6D6D6;
+    --theme-border-color: #999999;
+    --theme-header-bar-border-color: #B0B0B0;
+    --theme-help-box-border-color: #9A9A9A;
+}
+
+/* ///////////////////////////////////////////////////// */
+/* overrides */
+
+.grid-view-header {
+    background-color:#C2C2C2;
+    border-color:#8A8A8A;
+}
+
+.grid-view-header-label {
+    color:#111;
+
+}
+
 /* Zebra List */
 .zebra-list-view {
    border-color: #999999;
@@ -6,7 +32,7 @@
 }
 
 .zebra-list-view-header-item {
-	background-color: rgb(184, 184, 184);
+    background-color: rgb(184, 184, 184);
 }
 
 .zebra-list-view-item-odd {
@@ -29,23 +55,11 @@
    background-color: #3a72b0;
 }
 /* ///////////////////////////////////////////////////// */
-
-.scene-template-dialog-border {
-   border-color: #999999;
-   border-width: 1px;
+.unity-foldout__toggle > .unity-toggle__input:focus > .unity-toggle__checkmark {
+    background-image: resource("Builtin Skins/LightSkin/Images/IN foldout.png");
+}
+.unity-foldout__toggle > .unity-toggle__input:focus:checked > .unity-toggle__checkmark {
+    background-image: resource("Builtin Skins/LightSkin/Images/IN foldout on.png");
 }
 
-.scene-template-preview-area {
-   background-color: #f0f0f0;
-   -unity-background-scale-mode: scale-to-fit;
-   justify-content: center;
-   overflow: hidden;
-}
-
-.scene-template-text-link {
-   color: #0000ff
-}
-
-.scene-template-element-selected {
-   background-color: #3a72b0;
-}
+/* ///////////////////////////////////////////////////// */

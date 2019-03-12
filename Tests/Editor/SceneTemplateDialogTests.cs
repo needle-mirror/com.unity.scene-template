@@ -70,58 +70,21 @@ namespace UnityEditor.SceneTemplate
         }
 
         [UnityTest]
-        public IEnumerator PopulateListView()
+        public IEnumerator PopulateGridView()
         {
             var dialog = OpenDialog();
             yield return null;
 
-            var listViews = dialog.rootVisualElement.Query<ListView>().ToList();
-            Assert.AreEqual(2, listViews.Count, "There should be two listviews.");
+            var gridViews = dialog.rootVisualElement.Query<GridView>().ToList();
+            Assert.AreEqual(1, gridViews.Count, "There should be one ListView");
+            var gridView = gridViews[0];
 
-            var defaultsListView = listViews[0];
-            Assert.IsNotNull(defaultsListView, "The dialog should have a default listview.");
-
-            var projectListView = listViews[1];
-            Assert.IsNotNull(projectListView, "The dialog should have a project listview.");
-
-            var defaultItems = defaultsListView.itemsSource as List<SceneTemplateInfo>;
-            Assert.IsNotNull(defaultItems);
-
-            var projectItems = projectListView.itemsSource as List<SceneTemplateInfo>;
-            Assert.IsNotNull(projectItems);
-
-            void ValidateItem(string assetPath, List<SceneTemplateInfo> items, VisualElement listview)
-            {
-                // Validate source items contains sceneTemplateInfo
-                var foundItem = items.Find(info => info.Equals(assetPath));
-                Assert.IsNotNull(foundItem, $"Listview does not contain asset {assetPath}");
-
-                // Validate label
-                var rows = listview.Query(null, StyleSheetLoader.Styles.classListViewItem).ToList();
-                var rowElement = rows.FirstOrDefault(el =>
-                {
-                    var label = el.Q<Label>();
-                    return label.text == foundItem.name;
-                });
-                Assert.IsNotNull(rowElement, $"Listview should have a row with label {foundItem.name}");
-
-                // Validate thumbnail
-                var thumbnail = rowElement.Q(SceneTemplateDialog.k_SceneTemplateListViewThumbnailName);
-                if (!foundItem.thumbnail)
-                    Assert.AreSame(dialog.m_DefaultListViewThumbnail, thumbnail.style.backgroundImage.value.texture);
-                else
-                    Assert.AreSame(foundItem.thumbnail, thumbnail.style.backgroundImage.value.texture);
-            }
-
-            // Check if it contains default templates
+            var templatesFromItems = gridView.items.Select(item => item.userData as SceneTemplateInfo).ToList();
+            var defaultItems = templatesFromItems.Where(t => t.isDefault).ToList();
             Assert.IsTrue(defaultItems.Count >= 2);
-            Assert.IsTrue(defaultItems.All(item => item.isDefault));
-            ValidateItem(SceneTemplateDialog.emptyTemplateName, defaultItems, defaultsListView);
 
-            Assert.IsTrue(defaultItems[1].name == SceneTemplateDialog.basicTemplateName || defaultItems[1].isDefault);
-
-            // Check if it contains a user template
-            ValidateItem(TestUtils.k_AssetsTempSceneTemplate, projectItems, projectListView);
+            var projectItems = templatesFromItems.Where(t => !t.isDefault).ToList();
+            Assert.IsTrue(projectItems.Count >= 0);
 
             // Validate that the Hidden Template is not shown in the dialog:
             var containsHiddenTemplate = projectItems.Any(item => item.assetPath.Contains("HiddenInDialog-template"));
@@ -136,14 +99,11 @@ namespace UnityEditor.SceneTemplate
             var dialog = OpenDialog();
             yield return null;
 
-            var listViews = dialog.rootVisualElement.Query<ListView>().ToList();
-            Assert.AreEqual(2, listViews.Count, "There should be two listviews.");
+            var gridView = dialog.rootVisualElement.Query<GridView>().ToList()[0];
 
-            var projectListView = listViews[1];
-            Assert.IsNotNull(projectListView, "The dialog should have a project listview.");
-
-            var projectItems = projectListView.itemsSource as List<SceneTemplateInfo>;
+            var projectItems = gridView.items.Select(item => item.userData as SceneTemplateInfo).ToList();
             Assert.IsNotNull(projectItems);
+            Assert.IsTrue(projectItems.Count > 0);
 
             var sceneTemplateInfo = projectItems.Find(info => info.Equals(TestUtils.k_AssetsTempSceneTemplate));
             Assert.IsNotNull(sceneTemplateInfo, $"The project listview should contain asset {TestUtils.k_AssetsTempSceneTemplate}");
@@ -151,7 +111,8 @@ namespace UnityEditor.SceneTemplate
             var index = projectItems.IndexOf(sceneTemplateInfo);
             Assert.Greater(index, -1);
 
-            projectListView.selectedIndex = index;
+            gridView.SetSelection(sceneTemplateInfo.GetHashCode());
+            Assert.IsTrue(gridView.selectedItems.First().userData == sceneTemplateInfo);
             yield return null;
 
             var descriptionContainer = dialog.rootVisualElement.Q(null, StyleSheetLoader.Styles.classDescriptionContainer);
@@ -171,7 +132,7 @@ namespace UnityEditor.SceneTemplate
 
             var scenePreviewElement = descriptionContainer.Q(SceneTemplateDialog.k_SceneTemplateThumbnailName);
             Assert.IsNotNull(scenePreviewElement);
-            Assert.AreSame(sceneTemplateInfo.thumbnail, scenePreviewElement.style.backgroundImage.value.texture);
+            Assert.IsTrue(!sceneTemplateInfo.thumbnail || sceneTemplateInfo.thumbnail == scenePreviewElement.style.backgroundImage.value.texture);
 
             dialog.Close();
         }
@@ -182,14 +143,19 @@ namespace UnityEditor.SceneTemplate
             var dialog = OpenDialog();
             yield return null;
 
-            var listView = dialog.rootVisualElement.Query<ListView>().First();
-            Assert.IsNotNull(listView, "The dialog should have a listview.");
+            var gridView = dialog.rootVisualElement.Query<GridView>().First();
+            Assert.IsNotNull(gridView, "The dialog should have a gridView.");
 
-            var oldLastSelectedTemplateIndex = listView.selectedIndex;
 
-            var newLastSelectedTemplateIndex = (++oldLastSelectedTemplateIndex) % listView.itemsSource.Count;
+            Assert.IsTrue(gridView.selectedItems.Any(), "Selection should not be empty");
+            var selectedItem = gridView.selectedItems.First();
 
-            listView.selectedIndex = newLastSelectedTemplateIndex;
+            var anotherItem = gridView.items.FirstOrDefault(i => i != selectedItem && !(i.userData as SceneTemplateInfo).IsInMemoryScene);
+            var anotherTemplateInfo = anotherItem.userData as SceneTemplateInfo;
+            Assert.NotNull(anotherTemplateInfo);
+            Assert.NotNull(anotherTemplateInfo.assetPath);
+            var anotherItemPath = anotherTemplateInfo.assetPath;
+            gridView.SetSelection(anotherItem);
 
             dialog.Close();
             yield return null;
@@ -198,9 +164,11 @@ namespace UnityEditor.SceneTemplate
             // Yield another time to make sure the order of the calls to delayCall does not matter
             yield return null;
 
-            listView = dialog.rootVisualElement.Query<ListView>().First();
+            gridView = dialog.rootVisualElement.Query<GridView>().First();
 
-            Assert.AreEqual(newLastSelectedTemplateIndex, listView.selectedIndex, "Selected index should have been restored from the preferences.");
+            Assert.IsTrue(gridView.selectedItems.Any());
+            var selectedTemplate = gridView.selectedItems.First().userData as SceneTemplateInfo;
+            Assert.AreEqual(selectedTemplate.assetPath, anotherItemPath, "Selected item should have been restored from the preferences.");
 
             dialog.Close();
         }
@@ -229,23 +197,20 @@ namespace UnityEditor.SceneTemplate
             var dialog = OpenDialog();
             yield return null;
 
-            var listViews = dialog.rootVisualElement.Query<ListView>().ToList();
-            var projectListView = listViews[1];
-            var projectItems = projectListView.itemsSource as List<SceneTemplateInfo>;
+            var gridView = dialog.rootVisualElement.Query<GridView>().ToList()[0];
+            var firstUserItem = gridView.items.FirstOrDefault(item => !(item.userData as SceneTemplateInfo).IsInMemoryScene);
 
-            var selectedItem = projectItems[0];
-            Assert.IsNotNull(selectedItem, "There should be an item in the project template list.");
+            Assert.IsNotNull(firstUserItem, "There should be an item in the project template list.");
 
-            projectListView.selectedIndex = 0;
-            yield return null;
+            var firstUserDefineTemplate = firstUserItem.userData as SceneTemplateInfo;
 
-            dialog.OnEditTemplate(selectedItem);
+            dialog.OnEditTemplate(firstUserDefineTemplate);
             yield return null;
 
             // Selection should be our asset
             var selectedObject = Selection.activeObject;
             var selectedObjectAssetPath = AssetDatabase.GetAssetPath(selectedObject);
-            Assert.AreEqual(selectedItem.assetPath, selectedObjectAssetPath);
+            Assert.AreEqual(firstUserDefineTemplate.assetPath, selectedObjectAssetPath);
 
             // The window should have been closed and destroy by then.
             Assert.IsTrue(!dialog);

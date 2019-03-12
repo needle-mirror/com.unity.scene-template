@@ -38,6 +38,7 @@ namespace UnityEditor.SceneTemplate
             {
                 Element.style.backgroundImage = null;
                 var noThumbnailLabel = new Label(m_NoPreviewText);
+                noThumbnailLabel.AddToClassList("preview-area-no-img-label");
                 noThumbnailLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
                 Element.Add(noThumbnailLabel);
             }

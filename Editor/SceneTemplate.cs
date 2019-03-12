@@ -14,6 +14,7 @@ namespace UnityEditor.SceneTemplate
     {
         internal static string packageName = "com.unity.scene-template";
         internal static string packageFolderName = $"Packages/{packageName}";
+        internal static string resourcesFolder = $"{packageFolderName}/Editor/Resources";
 
         /// <summary>
         /// Event called before a template is instantiated.
@@ -206,7 +207,10 @@ namespace UnityEditor.SceneTemplate
         {
             if (String.IsNullOrEmpty(newSceneOutputPath))
             {
-                newSceneOutputPath = SceneTemplateUtils.SaveFilePanelUniqueName( $"Save scene instantiated from template ({sceneTemplate.name})", SceneTemplateUtils.GetLastFolder(), Path.GetFileNameWithoutExtension(sourceScenePath), "unity");
+                newSceneOutputPath = SceneTemplateUtils.SaveFilePanelUniqueName(
+                    $"Save scene instantiated from template ({sceneTemplate.name})", 
+                    SceneTemplateUtils.GetLastFolder("unity"), 
+                    Path.GetFileNameWithoutExtension(sourceScenePath), "unity");
                 if (string.IsNullOrEmpty(newSceneOutputPath))
                     return false;
             }
@@ -279,7 +283,7 @@ namespace UnityEditor.SceneTemplate
             var currentScene = SceneManager.GetActiveScene();
             if (string.IsNullOrEmpty(currentScene.path))
             {
-                var suggestedScenePath = SceneTemplateUtils.SaveFilePanelUniqueName("Save scene", SceneTemplateUtils.GetLastFolder(), "newscene", "unity");
+                var suggestedScenePath = SceneTemplateUtils.SaveFilePanelUniqueName("Save scene", "Assets", "newscene", "unity");
                 if (string.IsNullOrEmpty(suggestedScenePath) || !EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), suggestedScenePath))
                     return;
             }

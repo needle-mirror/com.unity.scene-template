@@ -12,6 +12,12 @@ Note that Scene Templates are a *Preview Package* and that you need to use the [
 
 # Using Scene Templates
 
+A quick introduction video to the feature:
+
+<a href="https://www.youtube.com/watch?feature=player_embedded&v=xAY32lbIeNo" target="_blank"><img src="https://img.youtube.com/vi/xAY32lbIeNo/0.jpg"
+alt="IMAGE ALT TEXT HERE" width="240" height="180" border="10" /></a>
+
+
 To create a new template:
 - Create a scene that you wish to be your template and save it in your Project
 - Right click on an existing scene and select: 'Create Scene Template From Scene' OR use the top menu item 'File > Save As Scene Template'. You will be prompted to save the asset somewhere in your project. We suggest creating a Templates folder in which to keep your scenes and their dependent assets, along with the Scene Template assets.

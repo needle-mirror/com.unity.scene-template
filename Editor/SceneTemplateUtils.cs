@@ -281,14 +281,14 @@ namespace UnityEditor.SceneTemplate
                 }
                 if (Directory.Exists(lastFolder))
                 {
-                    EditorPrefs.SetString(k_LastSceneOperationFolder, lastFolder);
+                    EditorPrefs.SetString($"{k_LastSceneOperationFolder}{Path.GetExtension(path)}", lastFolder);
                 }
             }
         }
 
-        internal static string GetLastFolder()
+        internal static string GetLastFolder(string fileExtension)
         {
-            var lastFolder = EditorPrefs.GetString(k_LastSceneOperationFolder, null);
+            var lastFolder = EditorPrefs.GetString($"{k_LastSceneOperationFolder}.{fileExtension}", null);
             if (lastFolder != null)
             {
                 if (Path.IsPathRooted(lastFolder))
@@ -325,6 +325,16 @@ namespace UnityEditor.SceneTemplate
             }
 
             return result;
+        }
+
+        private static Type[] GetAllEditorWindowTypes()
+        {
+            return GetAllDerivedTypes(AppDomain.CurrentDomain, typeof(EditorWindow));
+        }
+
+        internal static Type GetProjectBrowserWindowType()
+        {
+            return GetAllEditorWindowTypes().FirstOrDefault(t => t.Name == "ProjectBrowser");
         }
     }
 }
