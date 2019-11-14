@@ -1,0 +1,5 @@
+default = {
+    execute_handlers = {
+        file_new_scene = "File/Menu/NewSceneOverride"
+    }
+}

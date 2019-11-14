@@ -1,0 +1,212 @@
+/* ///////////////////////////////////////////////////// */
+/* Asset Inspector */
+#scene-template-asset-inspector-dependency-label {
+   margin-bottom: 3px;
+}
+
+#scene-template-asset-inspector-description-field {
+   height: 100px;
+}
+
+#scene-template-pipeline-field {
+   margin-top: 3px;
+}
+
+#scene-template-asset-inspector-description-field > TextInput {
+   -unity-text-align: upper-left;
+}
+
+#scene-template-asset-inspector-thumbnail-area {
+   height: 100px;
+}
+
+#scene-template-asset-inspector-snapshot-row > Button {
+   margin-right: 0px;
+   margin-left: 0px;
+   flex-grow: 1;
+}
+
+#scene-template-asset-inspector-list-view {
+	flex-grow: 1;
+	margin-top: 10px;
+	flex-direction: column;
+}
+
+.scene-template-asset-inspector-dependency-header {
+	flex-grow: 1;
+	margin-left: 3px;
+	padding: 0px;
+}
+
+.scene-template-asset-inspector-dependency-header-clone-column {
+	padding: 0px;
+	margin: 0px;
+	width: 60px;
+}
+
+.scene-template-asset-inspector-dependency-row-icon {
+	width: 15px;
+	height: 15px;
+	margin-left: 3px;
+	padding: 0px;
+}
+
+.scene-template-asset-inspector-dependency-row-label {
+	flex-grow: 1;
+	margin-left: 3px;
+	-unity-text-align: middle-left;
+}
+
+.scene-template-asset-inspector-dependency-row-clone-toggle {
+	width: 14px;
+	height: 14px;
+	margin-left: 0px;
+	margin-top: 1px;
+	margin-bottom: 0px;
+	margin-right: 33px;
+	padding: 0px;
+}
+
+.scene-template-asset-inspector-help-box-pipeline {
+	margin-top: 20px;
+	height: 70px;
+}
+
+.scene-template-asset-inspector-help-box-dependency {
+	margin-top: 20px;
+	height: 70px;
+}
+/* ///////////////////////////////////////////////////// */
+
+
+/* ///////////////////////////////////////////////////// */
+/* New From Template Dialog */
+.scene-template-dialog-list-view {
+   flex-grow: 1;
+   flex-shrink: 1;
+   flex-basis: 0;
+   --unity-item-height: 32;
+}
+
+.scene-template-dialog-list-view-item {
+   flex-direction: row;
+   padding-left: 5px;
+   flex-shrink: 0;
+}
+
+#scene-template-list-view-thumbnail-element {
+   flex-shrink: 0;
+   -unity-background-scale-mode: scale-and-crop;
+}
+
+.scene-template-dialog-list-view-item > Label {
+   -unity-text-align: middle-left;
+   -unity-font-style: bold;
+   padding-left: 3px;
+}
+
+.scene-template-dialog-default-list-view {
+   flex-grow: 0;
+   flex-shrink: 1;
+   flex-basis: auto;
+   height: 100px;
+}
+
+.scene-template-dialog-template-list-view {
+   margin-top: 10px;
+}
+
+.scene-template-dialog-offset-container {
+   height: 100%;
+   padding-left: 5px;
+   padding-right: 5px;
+   padding-bottom: 5px;
+   padding-top: 5px;
+}
+
+.scene-template-dialog-main-container {
+   height: 100%;
+   padding-bottom: 5px;
+}
+
+.scene-template-dialog-templates-container {
+   width: 30%;
+   min-width: 230px;
+   flex-grow: 1;
+   flex-shrink: 0;
+   padding-right: 5px;
+}
+
+.scene-template-dialog-default-templates-container {
+   height: 20%;
+   flex-grow: 1;
+   flex-shrink: 0;
+}
+
+.scene-template-dialog-project-templates-container {
+   height: 80%;
+   flex-grow: 1;
+   flex-shrink: 0;
+}
+
+.scene-template-dialog-description-container {
+   width: 70%;
+   flex-grow: 1;
+   flex-shrink: 0;
+}
+
+.scene-template-dialog-description-text-container {
+   width: 365px;
+   flex-grow: 0;
+   flex-shrink: 0;
+   padding-top: 10px;
+   padding-left: 10px;
+   padding-bottom: 10px;
+   padding-right: 5px;
+   overflow: hidden;
+}
+
+.scene-template-dialog-description-thumbnail-container {
+   flex-grow: 1;
+   flex-shrink: 0;
+   padding-top: 10px;
+   padding-left: 5px;
+   padding-bottom: 10px;
+   padding-right: 10px;
+}
+
+.scene-template-dialog-toggle-label {
+   min-width: 100px;
+}
+
+.scene-template-dialog-buttons {
+   width: 100%;
+}
+
+.scene-template-header-label {
+   -unity-font-style: bold;
+   overflow: hidden;
+   -unity-text-align: middle-left;
+}
+
+.scene-template-dialog-list-header {
+	padding-left: 5px;
+}
+
+.scene-template-dialog-wrapping-text {
+   white-space: normal;
+}
+
+#scene-template-title-label {
+   margin-bottom: 15px;
+}
+
+#scene-template-path-label {
+   margin-bottom: 15px;
+   cursor: link;
+}
+
+#scene-template-thumbnail-element {
+   height: 50%;
+}
+/* ///////////////////////////////////////////////////// */

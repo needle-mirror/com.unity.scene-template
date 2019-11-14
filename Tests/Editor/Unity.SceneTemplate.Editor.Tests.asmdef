@@ -1,0 +1,13 @@
+{
+    "name": "Unity.SceneTemplate.Editor.Tests",
+    "references": [
+        "Unity.SceneTemplate.Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": []
+}

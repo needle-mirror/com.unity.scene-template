@@ -1,0 +1,51 @@
+﻿/* ///////////////////////////////////////////////////// */
+/* Zebra List */
+.zebra-list-view {
+   border-color: #1f1f1f;
+   border-width: 1px;
+}
+
+.zebra-list-view-header-item {
+	background-color: rgb(42, 42, 42);
+}
+
+.zebra-list-view-item-odd {
+   background-color: #3f3f3f;
+}
+
+.zebra-list-view-item-odd:hover {
+   background-color: #303030;
+}
+
+.unity-list-view__item--selected.zebra-list-view-item-odd {
+   background-color: #4d4d4d;
+}
+
+.unity-list-view__item--selected.zebra-list-view-item-odd:hover {
+   background-color: #2c5d87;
+}
+
+.unity-list-view:focus > .unity-list-view__item--selected.zebra-list-view-item-odd {
+   background-color: #2c5d87;
+}
+/* ///////////////////////////////////////////////////// */
+
+.scene-template-dialog-border {
+   border-color: #1f1f1f;
+   border-width: 1px;
+}
+
+.scene-template-preview-area {
+   background-color: #2a2a2a;
+   -unity-background-scale-mode: scale-to-fit;
+   justify-content: center;
+   overflow: hidden;
+}
+
+.scene-template-text-link {
+   color: #4c7eff
+}
+
+.scene-template-element-selected {
+   background-color: #2c5d87;
+}

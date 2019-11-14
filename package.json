@@ -1,0 +1,25 @@
+{
+  "name": "com.unity.scene-template",
+  "displayName": "Scene Template",
+  "version": "1.0.0-preview.6",
+  "unity": "2020.1",
+  "unityRelease": "0a12",
+  "keywords": [
+    "unity",
+    "editor",
+    "scene",
+    "creation",
+    "template"
+  ],
+  "description": "Create new scenes from various user defined templates.",
+  "author": {
+    "name": "Unity Technologies ApS",
+    "url": "https://unity.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.cds.internal.unity3d.com:unity/com.unity.scene-template.git",
+    "revision": "5b7649dcb37cf0f979701a4885e46e41ca56b5f3"
+  },
+  "dependencies": {}
+}
