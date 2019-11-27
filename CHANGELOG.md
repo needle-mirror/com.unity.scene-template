@@ -1,3 +1,7 @@
+## [1.0.0-preview.7] - 2019-11-28
+- [UX-API] Allow SceneTemplatePipeline to filter out its bound template according to a set of condition.
+- [UX] Add a toggle in dependency header to batch clone/reference all dependencies.
+
 ## [1.0.0-preview.6] - 2019-11-15
 - [Package] Properly specify the unityVersion for this package.
 

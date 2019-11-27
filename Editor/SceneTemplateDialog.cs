@@ -575,13 +575,24 @@ namespace UnityEditor.SceneTemplate
             // Add the special Empty and Default template
             sceneTemplateList.Add(s_EmptySceneTemplateInfo);
 
-            // Check for real remplateAssets:
+            // Check for real templateAssets:
             var hasAnyDefaults = false;
             var sceneTemplateAssetInfos = SceneTemplateUtils.GetSceneTemplatePaths().Select(templateAssetPath =>
             {
                 var sceneTemplateAsset = AssetDatabase.LoadAssetAtPath<SceneTemplateAsset>(templateAssetPath);
                 return Tuple.Create(templateAssetPath, sceneTemplateAsset);
-            }).Where(templateData => templateData.Item2 != null && templateData.Item2.IsValid).Select(templateData =>
+            })
+            .Where(templateData => {
+                if (templateData.Item2 == null)
+                    return false;
+                if (!templateData.Item2.IsValid)
+                    return false;
+                var pipeline = templateData.Item2.CreatePipeline();
+                if (pipeline == null)
+                    return true;
+                return pipeline.IsValidTemplateForInstantiation(templateData.Item2);
+            }).
+            Select(templateData =>
             {
                 var assetName = Path.GetFileNameWithoutExtension(templateData.Item1);
                 hasAnyDefaults = hasAnyDefaults || templateData.Item2.addToDefaults;

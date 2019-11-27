@@ -123,6 +123,10 @@ namespace UnityEditor.SceneTemplate
             // Check if it contains a user template
             ValidateItem(TestUtils.k_AssetsTempSceneTemplate, projectItems, projectListView);
 
+            // Validate that the Hidden Template is not shown in the dialog:
+            var containsHiddenTemplate = projectItems.Any(item => item.assetPath.Contains("HiddenInDialog-template"));
+            Assert.IsFalse(containsHiddenTemplate, "HiddenInDialog-template should not be shown in dialog.");
+
             dialog.Close();
         }
 

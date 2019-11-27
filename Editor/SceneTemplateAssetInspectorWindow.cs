@@ -47,6 +47,7 @@ namespace UnityEditor.SceneTemplate
 
         private VisualElement m_DependencyHelpBox;
         private ZebraList m_ZebraList;
+        private Toggle m_CloneHeaderToggle;
 
         VisualElement Root { get; set; }
 
@@ -196,9 +197,22 @@ namespace UnityEditor.SceneTemplate
                 changeAllRowElement.Add(dependenciesLabelField);
 
                 var cloneLabel = new Label("Clone");
-                cloneLabel.AddToClassList(StyleSheetLoader.Styles.classHeaderLabel);
-                cloneLabel.AddToClassList("scene-template-asset-inspector-dependency-header-clone-column");
                 changeAllRowElement.Add(cloneLabel);
+                m_CloneHeaderToggle = new Toggle();
+                m_CloneHeaderToggle.SetValueWithoutNotify(AreAllDependenciesCloned());
+                m_CloneHeaderToggle.RegisterValueChangedCallback<bool>(evt =>
+                {
+                    var listContent = m_ZebraList.listView.Q<VisualElement>("unity-content-container");
+                    foreach (var row in listContent.Children())
+                    {
+                        var prop = (SerializedProperty)row.userData;
+                        var mode = evt.newValue ? TemplateInstantiationMode.Clone : TemplateInstantiationMode.Reference;
+                        SetDependencyInstantiationMode(row, mode);
+                    }
+                    serializedObject.ApplyModifiedProperties();
+                });
+                m_CloneHeaderToggle.AddToClassList("scene-template-asset-inspector-dependency-header-clone-column");
+                changeAllRowElement.Add(m_CloneHeaderToggle);
 
                 return changeAllRowElement;
             }, CreateDependencyElement, BindDependencyElement);
@@ -209,6 +223,14 @@ namespace UnityEditor.SceneTemplate
             root.Add(m_ZebraList);
             m_ZebraList.name = k_DependencyListView;
             UpdateDependencyListVisibility();
+        }
+
+        private bool AreAllDependenciesCloned()
+        {
+            var sceneTemplateAsset = (SceneTemplateAsset)serializedObject.targetObject;
+            return sceneTemplateAsset.dependencies
+                .Where(dep => ReferenceUtils.GetDependencyInfo(dep.dependency).supportsModification)
+                .All(dep => dep.instantiationMode == TemplateInstantiationMode.Clone);
         }
 
         private static void OnDoubleClick(IEnumerable<object> objs)
@@ -294,8 +316,9 @@ namespace UnityEditor.SceneTemplate
                 // Sync Selection if the dependency is part of it:
                 if (m_ZebraList.listView.selectedIndices.Contains(modelIndex))
                     SyncListSelectionToValue(newInstantiationType);
-
                 serializedObject.ApplyModifiedProperties();
+
+                m_CloneHeaderToggle.SetValueWithoutNotify(AreAllDependenciesCloned());
             });
         }
 
@@ -309,21 +332,27 @@ namespace UnityEditor.SceneTemplate
                     var prop = (SerializedProperty)row.userData;
                     if (row.ClassListContains("unity-list-view__item--selected"))
                     {
-                        var toggle = (Toggle)row.ElementAt(2);
-                        if (!toggle.enabledSelf)
-                            continue;
-
-                        toggle.SetValueWithoutNotify(mode == TemplateInstantiationMode.Clone);
-
-                        var depProp = prop.FindPropertyRelative(k_InstantiationModePropertyName);
-                        if (depProp.enumValueIndex != (int)mode)
-                        {
-                            depProp.enumValueIndex = (int)mode;
-                        }
+                        SetDependencyInstantiationMode(row, mode);
                     }
                 }
             }
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private void SetDependencyInstantiationMode(VisualElement row, TemplateInstantiationMode mode)
+        {
+            var prop = (SerializedProperty)row.userData;
+            var toggle = (Toggle)row.ElementAt(2);
+            if (!toggle.enabledSelf)
+                return;
+
+            toggle.SetValueWithoutNotify(mode == TemplateInstantiationMode.Clone);
+
+            var depProp = prop.FindPropertyRelative(k_InstantiationModePropertyName);
+            if (depProp.enumValueIndex != (int)mode)
+            {
+                depProp.enumValueIndex = (int)mode;
+            }
         }
 
         private IEnumerable<SerializedProperty> GetSelectedDependencies()

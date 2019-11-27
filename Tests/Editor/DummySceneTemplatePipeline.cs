@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 namespace UnityEditor.SceneTemplate
 {
-    public class DummySceneTemplatePipeline : ISceneTemplatePipeline
+    public class DummySceneTemplatePipeline : SceneTemplatePipelineAdapter
     {
         public static bool beforeHit;
         public static bool afterHit;
@@ -16,7 +16,7 @@ namespace UnityEditor.SceneTemplate
             afterHit = false;
         }
 
-        public void BeforeTemplateInstantiation(SceneTemplateAsset sceneTemplateAsset, bool isAdditive, string sceneName)
+        public override void BeforeTemplateInstantiation(SceneTemplateAsset sceneTemplateAsset, bool isAdditive, string sceneName)
         {
             if (sceneTemplateAsset)
             {
@@ -25,7 +25,7 @@ namespace UnityEditor.SceneTemplate
             beforeHit = true;
         }
 
-        public void AfterTemplateInstantiation(SceneTemplateAsset sceneTemplateAsset, Scene scene, bool isAdditive, string sceneName)
+        public override void AfterTemplateInstantiation(SceneTemplateAsset sceneTemplateAsset, Scene scene, bool isAdditive, string sceneName)
         {
             if (sceneTemplateAsset)
             {
