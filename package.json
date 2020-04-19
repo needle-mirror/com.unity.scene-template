@@ -1,7 +1,7 @@
 {
   "name": "com.unity.scene-template",
   "displayName": "Scene Template",
-  "version": "1.0.0-preview.8",
+  "version": "1.0.0-preview.9",
   "unity": "2020.1",
   "unityRelease": "0a12",
   "keywords": [
@@ -17,10 +17,12 @@
     "url": "https://unity.com/"
   },
   "repository": {
-    "footprint": "2302916dadf6d49e661fa6703b07548d94185156",
     "type": "git",
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.scene-template.git",
-    "revision": "3a8b3e237c626cfb5ec807f904ca4c1f5db28437"
+    "revision": "d4729d9a9ad7cfca249824197a8965f004aee24a"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "upmCi": {
+    "footprint": "ab88ab2d98e66ffc8a652815d3928e205596606c"
+  }
 }

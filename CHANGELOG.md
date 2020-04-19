@@ -1,4 +1,21 @@
-## [1.0.0-preview.8] - 2019-3-13
+# Changelog
+
+## [1.0.0-preview.9] - 2020-04-20
+- [UX] Add a mechanism to persist the pin state of builtin and in readonly templates.
+- [UX] Remove the workflow where we would hide Basic template if any user defined template was pinned.
+- [UX] Fix most user facing labels and helpbox according to a doc review.
+- [UX] Add Scene Template Project Settings page that allows a user to change the default instantiation mode of various types.
+- [UX] Textures is to be cloned by default
+- [UX] Builtin templates are sorted last
+- [UX] Use the proper "save scene dialog" when instantiating a template are current scene is dirty.
+- [UX] Add proper doc link for scene template asset and in the gridview if no template are available.
+- [UX] Add a splitter in Scene template dialog between template list and description.
+- [UX] SubScenes are always cloned.
+- [Fix] Ensure we properly merge from default type infos after loading existing ones.
+- [DOC] Final edited version of documentation.
+- [Fix] Fix Description populate from last template.
+
+## [1.0.0-preview.8] - 2020-03-13
 - [UX] New Grid view widget
 - [UX] New Grid view design for new scene dialog
 - [UX] New Pin workflow + replace basic scene workflow

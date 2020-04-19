@@ -35,7 +35,9 @@ namespace UnityEditor.SceneTemplate
         private const string k_SnapshotRowName = "scene-template-asset-inspector-snapshot-row";
         private const string k_SceneTemplatePipelineName = "scene-template-pipeline-field";
 
-        private const string k_DependencyInfo = @"Dependencies are found automatically from the scene assigned above. All dependencies for scenes created will be referenced unless 'Clone' is checked. Cloned assets will be duplicated into a folder named the same as your new scene upon creation.";
+        private const string k_DependencyInfo = @"This section lists dependencies of the Template Scene assigned above. Enable the Clone option for any dependency that you want to clone when you create a new scene from this template. Unity duplicates cloned assets into a folder with the same name as the new scene. The new scene references any dependencies that are not cloned.";
+
+        const string k_ScenteTemplateInfo = @"Scene Template Pipeline must be a Monoscript whose main class derives from ISceneTemplatePipeline or SceneTemplatePipelineAdapter. The main class and the script must have the same name.";
 
         private const int k_ItemSize = 16;
 
@@ -143,33 +145,31 @@ namespace UnityEditor.SceneTemplate
             addToDefaultsPropertyField.RegisterCallback<ChangeEvent<bool>>(e => TriggerSceneTemplateModified());
             addToDefaultsPropertyField.style.flexShrink = 0;
             defaultTemplateField.Add(addToDefaultsPropertyField);
-            var label = new Label("Pin in New Scene Dialog (replaces basic scene)");
+            var label = new Label("Pin in New Scene Dialog");
             label.style.unityTextAlign = TextAnchor.MiddleLeft;
             label.style.overflow = Overflow.Hidden;
             label.style.textOverflow = TextOverflow.Ellipsis;
             label.style.flexShrink = 1;
             defaultTemplateField.Add(label);
             detailElement.Add(defaultTemplateField);
-            root.Add(CreateFoldoutInspector(detailElement, "Details", "SceneTemplateDetailsFoldout"));
+            root.Add(CreateFoldoutInspector(detailElement, "Details", "SceneTemplateInspectorDetailsFoldout"));
 
             // Template thumbnail
             var templateThumbnailProperty = serializedObject.FindProperty(k_TemplateThumbnailPropertyName);
             var thumbnailField = MakeThumbnailField(templateThumbnailProperty, "Texture");
-            root.Add(CreateFoldoutInspector(thumbnailField, "Thumbnail", "SceneTemplateThumbnailFoldout"));
+            root.Add(CreateFoldoutInspector(thumbnailField, "Thumbnail", "SceneTemplateInspectorThumbnailFoldout"));
 
             // SceneTemplatePipeline
             var sceneTemplatePipeline = new VisualElement();
-            sceneTemplatePipeline.Add(new HelpBox(
-                "Scene Template Pipeline is a MonoScript whose main class derives from ISceneTemplatePipeline or SceneTemplatePipelineAdapter and has the same name as the script.",
-                HelpBoxMessageType.Info));
+            sceneTemplatePipeline.Add(new HelpBox(k_ScenteTemplateInfo, HelpBoxMessageType.Info));
 
             var pipelineProperty = serializedObject.FindProperty(k_TemplatePipelineName);
-            var pipelineField = new PropertyField(pipelineProperty, "Scene template pipeline") { name = k_SceneTemplatePipelineName };
+            var pipelineField = new PropertyField(pipelineProperty, "Scene Template Pipeline") { name = k_SceneTemplatePipelineName };
             pipelineField.RegisterCallback<ChangeEvent<Object>>(e =>
             {
                 if (e.newValue != null && !SceneTemplateAsset.IsValidPipeline(e.newValue as MonoScript))
                 {
-                    Debug.LogWarning("Scene Template Pipeline must be a MonoScript whose main class derives from ISceneTemplatePipeline or SceneTemplatePipelineAdapter and has the same name as the script.");
+                    Debug.LogWarning(k_ScenteTemplateInfo);
                     pipelineProperty.objectReferenceValue = null;
                     serializedObject.ApplyModifiedProperties();
                 }
@@ -187,7 +187,7 @@ namespace UnityEditor.SceneTemplate
         private static Foldout CreateFoldoutInspector(VisualElement element, string title, string foldoutEditorPref)
         {
             var foldout = new Foldout();
-            foldout.value = EditorPrefs.GetBool(foldoutEditorPref);
+            foldout.value = EditorPrefs.GetBool(foldoutEditorPref, true);
             var toggle = foldout.Q<Toggle>();
             toggle.AddToClassList(StyleSheetLoader.Styles.classInspectorFoldoutHeader);
             var titleElement = new Label(title);
@@ -259,7 +259,7 @@ namespace UnityEditor.SceneTemplate
         {
             var sceneTemplateAsset = (SceneTemplateAsset)serializedObject.targetObject;
             return sceneTemplateAsset.dependencies
-                .Where(dep => ReferenceUtils.GetDependencyInfo(dep.dependency).supportsModification)
+                .Where(dep => SceneTemplateProjectSettings.Get().GetDependencyInfo(dep.dependency).supportsModification)
                 .All(dep => dep.instantiationMode == TemplateInstantiationMode.Clone);
         }
 
@@ -335,7 +335,7 @@ namespace UnityEditor.SceneTemplate
             var instantiationModeProperty = property.FindPropertyRelative(k_InstantiationModePropertyName);
             var cloneToggle = (Toggle)el.ElementAt(2);
             cloneToggle.value = IsCloning(instantiationModeProperty);
-            cloneToggle.SetEnabled(ReferenceUtils.GetDependencyInfo(depProperty.objectReferenceValue).supportsModification);
+            cloneToggle.SetEnabled(SceneTemplateProjectSettings.Get().GetDependencyInfo(depProperty.objectReferenceValue).supportsModification);
             cloneToggle.RegisterValueChangedCallback<bool>(evt =>
             {
                 if (evt.newValue == IsCloning(instantiationModeProperty))
@@ -435,7 +435,7 @@ namespace UnityEditor.SceneTemplate
             {
                 var depInfoProperty = rootProperty.GetArrayElementAtIndex(i);
                 var depProperty = depInfoProperty.FindPropertyRelative(k_DependencyPropertyName);
-                if (!ReferenceUtils.GetDependencyInfo(depProperty.objectReferenceValue).ignore)
+                if (!SceneTemplateProjectSettings.Get().GetDependencyInfo(depProperty.objectReferenceValue).ignore)
                 {
                     model.Add(depInfoProperty);
                 }

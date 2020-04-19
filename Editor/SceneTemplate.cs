@@ -89,6 +89,9 @@ namespace UnityEditor.SceneTemplate
                 throw new Exception("Cannot find path for sceneTemplate: " + sceneTemplate.ToString());
             }
 
+            if (!Application.isBatchMode && !loadAdditively && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                return null;
+
             var instantiateEvent = new SceneTemplateAnalytics.SceneInstantiationEvent(sceneTemplate, instantiationType)
             {
                 additive = loadAdditively
@@ -99,9 +102,6 @@ namespace UnityEditor.SceneTemplate
 
             SceneAsset newSceneAsset = null;
             Scene newScene;
-
-            if (!Application.isBatchMode && SceneManager.GetActiveScene().isDirty)
-                EditorSceneManager.SaveOpenScenes();
 
             var templatePipeline = sceneTemplate.CreatePipeline();
 
@@ -140,6 +140,7 @@ namespace UnityEditor.SceneTemplate
             else
             {
                 templatePipeline?.BeforeTemplateInstantiation(sceneTemplate, loadAdditively, newSceneOutputPath);
+                newSceneTemplateInstantiating?.Invoke(sceneTemplate, newSceneOutputPath, loadAdditively);
                 if (loadAdditively)
                 {
                     newScene = EditorSceneManager.OpenScene(sourceScenePath, OpenSceneMode.Additive);

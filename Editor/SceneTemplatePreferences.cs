@@ -59,7 +59,7 @@ namespace UnityEditor.SceneTemplate
         }
     }
 
-    internal static class SceneTemplateSettings
+    internal static class SceneTemplatePreferences
     {
         public const string showOnProjectLoadLabel = "Show on Project Load";
         public const string showOnProjectLoadTooltip = "When enabled, the New Scene dialog will open when a project is loaded without a scene.";

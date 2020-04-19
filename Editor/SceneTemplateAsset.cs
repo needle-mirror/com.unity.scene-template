@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -17,6 +18,7 @@ namespace UnityEditor.SceneTemplate
     /// Asset storing everything needed to instantiate a scene from a templated scene
     /// </summary>
     [Serializable]
+    [HelpURL("https://docs.unity3d.com/Packages/com.unity.scene-template@latest/")]
     [CreateAssetMenu(menuName = "Scene Template", order = 201)]
     public class SceneTemplateAsset : ScriptableObject
     {
@@ -96,7 +98,7 @@ namespace UnityEditor.SceneTemplate
                 if (oldDependencyInfo != null)
                     return oldDependencyInfo;
 
-                var depTypeInfo = ReferenceUtils.GetDependencyInfo(d);
+                var depTypeInfo = SceneTemplateProjectSettings.Get().GetDependencyInfo(d);
                 var dependencyPath = AssetDatabase.GetAssetPath(d);
                 var instantiationMode = depTypeInfo.defaultInstantiationMode;
                 if (depTypeInfo.supportsModification && !string.IsNullOrEmpty(dependencyPath))
@@ -173,6 +175,7 @@ namespace UnityEditor.SceneTemplate
     /// Descriptor storing a dependency asset of a scene and what to do with that dependency (clone or reference) on template instantiation.
     /// </summary>
     [Serializable]
+    [DebuggerDisplay("{dependency} - {instantiationMode}")]
     public class DependencyInfo
     {
         /// <summary>

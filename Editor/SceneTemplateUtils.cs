@@ -1,6 +1,7 @@
 ﻿// #define SCENE_TEMPLATE_DEBUG
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -335,6 +336,13 @@ namespace UnityEditor.SceneTemplate
         internal static Type GetProjectBrowserWindowType()
         {
             return GetAllEditorWindowTypes().FirstOrDefault(t => t.Name == "ProjectBrowser");
+        }
+
+        internal static void OpenDocumentationUrl()
+        {
+            const string documentationUrl = "https://docs.unity3d.com/Packages/com.unity.scene-template@latest/";
+            var uri = new Uri(documentationUrl);
+            Process.Start(uri.AbsoluteUri);
         }
     }
 }

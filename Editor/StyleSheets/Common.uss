@@ -296,10 +296,7 @@
 }
 
 .scene-template-dialog-description-container {
-   width: 40%;
-   min-width: 150px;
-   flex-grow: 1;
-   flex-shrink: 0;
+   min-width: 200px;
    border-top-width: 1px;
    border-bottom-width: 1px;
    border-color: var(--theme-border-color);
@@ -313,10 +310,7 @@
 
 .scene-template-dialog-templates-container {
    padding-top: 0px;
-   width: 60%;
-   min-width: 150px;
-   flex-grow: 1;
-   flex-shrink: 0;
+   min-width: 375px;
    border-color: var(--theme-border-color);
    background-color: var(--theme-view-background-color);
    border-top-width: 1px;

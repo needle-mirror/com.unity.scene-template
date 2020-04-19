@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -35,6 +36,7 @@ namespace UnityEditor.SceneTemplate
                 TestUtils.k_TestSceneDependenciesAssetPath + "spherePrefabMaterial.mat",
                 TestUtils.k_TestSceneDependenciesAssetPath + "LensFlare.flare",
                 TestUtils.k_TestSceneDependenciesAssetPath + "ReflectionProbe-0.exr",
+                TestUtils.k_TestDataFolder + "Square.png",
                 TestUtils.k_TestSceneDependenciesAssetPath + "LightingData.asset",
                 TestUtils.k_TestSceneDependenciesAssetPath + "Animation.anim",
                 TestUtils.k_TestSceneDependenciesAssetPath + "PhysicsMaterial.physicMaterial",
@@ -44,7 +46,6 @@ namespace UnityEditor.SceneTemplate
 
         public static string[] k_TestSceneDependenciesReference =
             {
-                TestUtils.k_TestDataFolder + "Square.png",
                 TestUtils.k_TestDataFolder + "LightmapParameters.giparams",
             };
 
@@ -116,7 +117,7 @@ namespace UnityEditor.SceneTemplate
                 if (currentSelectionPath == depPath)
                     continue;
 
-                var typeInfo = ReferenceUtils.GetDependencyInfo(obj);
+                var typeInfo = SceneTemplateProjectSettings.Get().GetDependencyInfo(obj);
                 if (typeInfo.ignore)
                     continue;
 
@@ -136,6 +137,43 @@ namespace UnityEditor.SceneTemplate
                 return;
 
             Debug.Log($"obj: {Selection.activeObject} - name: {Selection.activeObject.name} - type: {Selection.activeObject.GetType()} - typeStr: {Selection.activeObject.GetType().ToString()}");
+        }
+
+        [MenuItem("Tools/Log all scriptable objects")]
+        private static void LogAllScriptableObjectTypes()
+        {
+            var str = new StringBuilder();
+            var allScriptableObjects = TypeCache.GetTypesDerivedFrom<ScriptableObject>();
+            foreach (var so in allScriptableObjects)
+            {
+                str.AppendLine(so.FullName);
+            }
+
+            Debug.Log($"all scriptable objects {str.ToString()}");
+        }
+
+        [MenuItem("Tools/Log all object types (not scriptableObjects)")]
+        private static void LogAllObjectTypes()
+        {
+            var str = new StringBuilder();
+
+            var allScriptableObjects = TypeCache.GetTypesDerivedFrom<ScriptableObject>().ToDictionary(t => t.FullName, t => t);
+
+            var allObjectTypes = TypeCache.GetTypesDerivedFrom<Object>().ToList();
+            var allObjectTypeList = new System.Collections.Generic.List<System.Type>();
+            foreach (var t in allObjectTypes)
+            {
+                if (allScriptableObjects.ContainsKey(t.FullName))
+                    continue;
+                allObjectTypeList.Add(t);
+            }
+
+            foreach (var t in allObjectTypeList)
+            {
+                str.AppendLine(t.FullName);
+            }
+
+            Debug.Log($"all object types: {str.ToString()}");
         }
 #endif
     }
