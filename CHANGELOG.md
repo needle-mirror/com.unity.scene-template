@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.0-preview.10] - 2020-04-23
+- [Fix] Remove useless preference page
+
 ## [1.0.0-preview.9] - 2020-04-20
 - [UX] Add a mechanism to persist the pin state of builtin and in readonly templates.
 - [UX] Remove the workflow where we would hide Basic template if any user defined template was pinned.
