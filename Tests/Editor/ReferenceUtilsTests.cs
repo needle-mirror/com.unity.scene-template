@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
@@ -46,4 +47,4 @@ public class ReferenceUtilsTests
         Assert.IsEmpty(extraDependencies, $"Found extra dependencies: {extraDeps}");
     }
 }
-
+#endif

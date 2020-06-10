@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System;
 using NUnit.Framework;
 
 public class SceneTemplateAssetInspectorTests
@@ -10,4 +11,4 @@ public class SceneTemplateAssetInspectorTests
         Assert.IsNotNull(gameViewType);
     }
 }
-
+#endif

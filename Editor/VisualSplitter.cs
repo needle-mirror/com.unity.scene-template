@@ -1,3 +1,4 @@
+#if (SCENE_TEMPLATE_MODULE == false)
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -176,3 +177,4 @@ namespace UnityEditor.SceneTemplate
         }
     }
 }
+#endif

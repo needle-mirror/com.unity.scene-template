@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.0.0-preview.11] - 2020-06-10
+- [Fix] Ensure Scene Template package will work with Scene temate core feature in 20.2.
+
 ## [1.0.0-preview.10] - 2020-04-23
 - [Fix] Remove useless preference page
 

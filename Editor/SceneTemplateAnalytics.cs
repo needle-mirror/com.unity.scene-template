@@ -1,4 +1,5 @@
-﻿// #define SCENE_TEMPLATE_ANALYTICS_LOGGING
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+// #define SCENE_TEMPLATE_ANALYTICS_LOGGING
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -304,3 +305,4 @@ namespace UnityEditor.SceneTemplate
 #endif
     }
 }
+#endif

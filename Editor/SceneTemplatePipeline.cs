@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.SceneTemplate;
 using UnityEngine;
@@ -67,3 +68,4 @@ public class SceneTemplatePipelineAdapter : ISceneTemplatePipeline
     {
     }
 }
+#endif

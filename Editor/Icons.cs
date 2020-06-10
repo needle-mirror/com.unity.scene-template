@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Experimental;
@@ -63,3 +64,4 @@ namespace UnityEditor.SceneTemplate
         }
     }
 }
+#endif

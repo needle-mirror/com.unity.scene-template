@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -307,3 +308,4 @@ public class SceneTemplateTests
         return Tuple.Create(templatePath, sceneTemplate);
     }
 }
+#endif

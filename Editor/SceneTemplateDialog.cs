@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -359,7 +360,7 @@ namespace UnityEditor.SceneTemplate
             };
         }
 
-        private static string GetKeyName(string name)
+        internal static string GetKeyName(string name)
         {
             return $"{k_KeyPrefix}.{name}";
         }
@@ -756,3 +757,4 @@ namespace UnityEditor.SceneTemplate
         }
     }
 }
+#endif

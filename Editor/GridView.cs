@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -661,3 +662,4 @@ public class GridView : VisualElement
         }
     }
 }
+#endif

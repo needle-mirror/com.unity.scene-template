@@ -1,4 +1,5 @@
-﻿// #define SCENE_TEMPLATE_DEBUG
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+// #define SCENE_TEMPLATE_DEBUG
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -178,3 +179,4 @@ namespace UnityEditor.SceneTemplate
 #endif
     }
 }
+#endif

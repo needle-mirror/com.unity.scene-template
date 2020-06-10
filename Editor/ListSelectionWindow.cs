@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System;
 using System.Linq;
 using System.Reflection;
 using JetBrains.Annotations;
@@ -106,3 +107,4 @@ namespace UnityEditor.SceneTemplate
         }
     }
 }
+#endif

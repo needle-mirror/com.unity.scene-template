@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System.Collections;
 using System.Dynamic;
 using System.Linq;
 using System.Net;
@@ -258,3 +259,4 @@ public class SceneTemplateDialogTests
         return dialog;
     }
 }
+#endif

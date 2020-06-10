@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -35,3 +36,4 @@ namespace UnityEditor.SceneTemplate
         }
     }
 }
+#endif

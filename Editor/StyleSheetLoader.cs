@@ -1,4 +1,5 @@
-﻿using UnityEngine.UIElements;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using UnityEngine.UIElements;
 
 namespace UnityEditor.SceneTemplate
 {
@@ -72,3 +73,4 @@ namespace UnityEditor.SceneTemplate
         }
     }
 }
+#endif

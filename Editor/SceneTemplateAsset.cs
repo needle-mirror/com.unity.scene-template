@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -188,4 +189,4 @@ namespace UnityEditor.SceneTemplate
         public TemplateInstantiationMode instantiationMode;
     }
 }
-
+#endif

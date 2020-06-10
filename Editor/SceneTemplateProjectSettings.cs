@@ -1,10 +1,8 @@
-﻿using System;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using JetBrains.Annotations;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -258,6 +256,10 @@ namespace UnityEditor.SceneTemplate
             {
                 defaultInstantiationMode = TemplateInstantiationMode.Clone,
             });
+            defaultDependencyTypeInfos.Add(new DependencyTypeInfo(typeof(LightingSettings))
+            {
+                defaultInstantiationMode = TemplateInstantiationMode.Clone,
+            });
             defaultDependencyTypeInfos.Add(new DependencyTypeInfo(typeof(AnimationClip))
             {
                 defaultInstantiationMode = TemplateInstantiationMode.Clone,
@@ -372,6 +374,13 @@ namespace UnityEditor.SceneTemplate
                 var oldLabelWidth = EditorGUIUtility.labelWidth;
                 EditorGUIUtility.labelWidth = Styles.labelWidth;
 
+                if (Unsupported.IsDeveloperMode())
+                {
+                    if (GUILayout.Button("Clear Scene Template Preferences"))
+                    {
+                        ClearPreferences();
+                    }
+                }
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUILayout.Label("Default types", EditorStyles.boldLabel, GUILayout.Width(285));
@@ -472,6 +481,17 @@ namespace UnityEditor.SceneTemplate
             }
         }
 
+        private static void ClearPreferences()
+        {
+            EditorPrefs.DeleteKey("SceneTemplateInspectorDetailsFoldout");
+            EditorPrefs.DeleteKey("SceneTemplateInspectorThumbnailFoldout");
+            EditorPrefs.DeleteKey("SceneTemplatePipelineFoldout");
+            EditorPrefs.DeleteKey("SceneTemplateDependenciesFoldout");
+            EditorPrefs.DeleteKey(SceneTemplateDialog.GetKeyName("m_Splitter"));
+            EditorPrefs.DeleteKey(SceneTemplateDialog.GetKeyName("sizeLevel"));
+            EditorPrefs.DeleteKey(SceneTemplateDialog.GetKeyName("m_LastSelectedTemplate"));
+        }
+
         private static void ResetDefaults()
         {
             var settings = Get();
@@ -480,3 +500,4 @@ namespace UnityEditor.SceneTemplate
         }
     }
 }
+#endif

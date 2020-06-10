@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿#if (SCENE_TEMPLATE_MODULE == false)
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
@@ -93,3 +94,4 @@ public class GridViewTests : EditorWindow
     }
 
 }
+#endif
